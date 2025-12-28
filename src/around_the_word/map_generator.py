@@ -34,8 +34,8 @@ def generate_map(
             locations=countries,
             locationmode="country names",
             z=counts,
-            colorscale="Viridis",
-            colorbar_title="Authors",
+            colorscale="Greens",
+            showscale=False,
             text=hover_texts,
             hovertemplate="<b>%{location}</b><br>Authors: %{z}<br><br>%{text}<extra></extra>",
         )
