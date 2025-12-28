@@ -48,6 +48,20 @@ def get_nationality_wikidata(author_name: str) -> Optional[str]:
 
     return None
 
+WRITER_PROFESSIONS = [
+    "writer",
+    "author",
+    "novelist",
+    "poet",
+    "playwright",
+    "essayist",
+    "comics artist",
+]
+
+# Regex pattern fragment for matching professions
+_PROF_PATTERN = "(?:" + "|".join(p.replace(" ", r"\s+") for p in WRITER_PROFESSIONS) + ")"
+
+
 # Wikipedia parsing fallback
 def get_nationality_wikipedia(author_name: str) -> Optional[str]:
     url = "https://en.wikipedia.org/api/rest_v1/page/summary/" + requests.utils.quote(
@@ -65,17 +79,18 @@ def get_nationality_wikipedia(author_name: str) -> Optional[str]:
         extract = data.get("extract", "")
 
         # Common patterns
+        nationality_pat = r"([A-Z][a-z]+(?:-[A-Z][a-z]+)?)"
         patterns = [
-            r"(?:is|was) an? ([A-Z][a-z]+(?:-[A-Z][a-z]+)?)\s+(?:writer|author|novelist|poet|playwright|essayist)",
-            r"(?:is|was) an? ([A-Z][a-z]+(?:-[A-Z][a-z]+)?)\s+(?:and\s+)?(?:\w+\s+)?(?:writer|author|novelist)",
-            r"(?:is|was) the ([A-Z][a-z]+(?:-[A-Z][a-z]+)?)\s+(?:writer|author|novelist|poet|playwright|essayist)",
-            r"\(.*?(\w+)\s+(?:writer|author|novelist)",
+            rf"(?:is|was) an? {nationality_pat}\s+{_PROF_PATTERN}",
+            rf"(?:is|was) an? {nationality_pat}\s+(?:and\s+)?(?:\w+\s+)?{_PROF_PATTERN}",
+            rf"(?:is|was) the {nationality_pat}\s+{_PROF_PATTERN}",
+            rf"\(.*?(\w+)\s+{_PROF_PATTERN}",
         ]
 
         # Fallback: nationality appears after "is/was a/an" and sentence contains author-related word
-        if re.search(r"\b(?:writer|author|novelist|poet|playwright|essayist)\b", extract, re.IGNORECASE):
-            patterns.append(r"(?:is|was) an? ([A-Z][a-z]+(?:-[A-Z][a-z]+)?)\s+\w+")
-            patterns.append(r"(?:is|was) the? ([A-Z][a-z]+(?:-[A-Z][a-z]+)?)\s+\w+")
+        if re.search(rf"\b{_PROF_PATTERN}\b", extract, re.IGNORECASE):
+            patterns.append(rf"(?:is|was) an? {nationality_pat}\s+\w+")
+            patterns.append(rf"(?:is|was) the? {nationality_pat}\s+\w+")
 
         for pattern in patterns:
             match = re.search(pattern, extract)
