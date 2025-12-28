@@ -39,6 +39,12 @@ def main():
         default=0.5,
         help="Delay between API requests in seconds (default: 0.5)",
     )
+    parser.add_argument(
+        "-c",
+        "--cache",
+        type=Path,
+        help="JSON file to cache author nationalities (enables manual corrections)",
+    )
 
     args = parser.parse_args()
 
@@ -58,7 +64,7 @@ def main():
         sys.exit(1)
 
     print("Looking up author nationalities...")
-    author_countries = lookup_authors(authors, delay=args.delay)
+    author_countries = lookup_authors(authors, delay=args.delay, cache_path=args.cache)
 
     if sum(1 for c in author_countries.values() if c) > 0:
         print(f"\nGenerating map: {args.output}")

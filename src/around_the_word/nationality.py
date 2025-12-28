@@ -1,5 +1,7 @@
+import json
 import re
 import time
+from pathlib import Path
 from typing import Optional
 
 import requests
@@ -112,13 +114,35 @@ def nationality_to_country(nationality: str) -> Optional[str]:
     return None
 
 
+def load_cache(path: Path) -> dict[str, Optional[str]]:
+    if not path.exists():
+        return {}
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_cache(path: Path, data: dict[str, Optional[str]]) -> None:
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+
 def lookup_authors(
-    authors: set[str], delay: float = 0.5
+    authors: set[str], delay: float = 0.5, cache_path: Optional[Path] = None
 ) -> dict[str, Optional[str]]:
+    cache = load_cache(cache_path) if cache_path else {}
     results = {}
     author_list = sorted(authors)
+    fetched_count = 0
 
     for i, author in enumerate(author_list):
+        if cache[author]:
+            results[author] = cache[author]
+            print(f"[{i + 1}/{len(author_list)}] {author}: {cache[author] or 'NOT FOUND'} (cached)")
+            continue
+
+        if fetched_count > 0:
+            time.sleep(delay)
+
         print(f"[{i + 1}/{len(author_list)}] Looking up: {author}")
         nationality = lookup_author_nationality(author)
 
@@ -130,7 +154,10 @@ def lookup_authors(
             results[author] = None
             print("  -> NOT FOUND")
 
-        if i < len(author_list) - 1:
-            time.sleep(delay)
+        cache[author] = results[author]
+        fetched_count += 1
+
+    if cache_path:
+        save_cache(cache_path, cache)
 
     return results
