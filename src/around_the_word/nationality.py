@@ -56,6 +56,7 @@ WRITER_PROFESSIONS = [
     "playwright",
     "essayist",
     "comics artist",
+    "comics creator"
 ]
 
 # Regex pattern fragment for matching professions
