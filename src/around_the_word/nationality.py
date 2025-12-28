@@ -75,15 +75,7 @@ def get_nationality_wikipedia(author_name: str) -> Optional[str]:
             match = re.search(pattern, extract)
             if match:
                 nationality = match.group(1)
-                if nationality.lower() not in [
-                    "the",
-                    "a",
-                    "an",
-                    "one",
-                    "prolific",
-                    "famous",
-                    "notable",
-                ]:
+                if nationality_to_country(nationality):
                     return nationality
 
     except Exception as e:
