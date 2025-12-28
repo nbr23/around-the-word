@@ -1,4 +1,4 @@
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Optional
 
@@ -9,16 +9,25 @@ def generate_map(
     author_countries: dict[str, Optional[str]],
     output_path: str | Path = "author_map.html",
 ) -> Path:
-    # Count unique authors per country
-    country_counts = Counter(
-        country for country in author_countries.values() if country
-    )
+    authors_by_country: dict[str, list[str]] = defaultdict(list)
+    for author, country in author_countries.items():
+        if country:
+            authors_by_country[country].append(author)
 
-    if not country_counts:
+    if not authors_by_country:
         raise ValueError("No valid country data to map")
 
-    countries = list(country_counts.keys())
-    counts = list(country_counts.values())
+    countries = list(authors_by_country.keys())
+    counts = [len(authors_by_country[c]) for c in countries]
+
+    hover_texts = []
+    for country in countries:
+        authors = sorted(authors_by_country[country])
+        if len(authors) > 25:
+            author_list = "<br>".join(authors[:25]) + f"<br>...and {len(authors) - 25} more"
+        else:
+            author_list = "<br>".join(authors)
+        hover_texts.append(author_list)
 
     fig = go.Figure(
         data=go.Choropleth(
@@ -27,6 +36,8 @@ def generate_map(
             z=counts,
             colorscale="Viridis",
             colorbar_title="Authors",
+            text=hover_texts,
+            hovertemplate="<b>%{location}</b><br>Authors: %{z}<br><br>%{text}<extra></extra>",
         )
     )
 

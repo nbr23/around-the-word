@@ -26,7 +26,7 @@ def get_nationality_wikidata(author_name: str) -> Optional[str]:
     url = "https://query.wikidata.org/sparql"
     headers = {
         "Accept": "application/json",
-        "User-Agent": "AroundTheWord/1.0 (Goodreads nationality visualizer)",
+        "User-Agent": "AroundTheWord/1.0 (Author nationality visualizer)",
     }
 
     try:
@@ -53,7 +53,7 @@ def get_nationality_wikipedia(author_name: str) -> Optional[str]:
     url = "https://en.wikipedia.org/api/rest_v1/page/summary/" + requests.utils.quote(
         author_name
     )
-    headers = {"User-Agent": "AroundTheWord/1.0 (Goodreads nationality visualizer)"}
+    headers = {"User-Agent": "AroundTheWord/1.0 (Author nationality visualizer)"}
 
     try:
         response = requests.get(url, headers=headers, timeout=10)
