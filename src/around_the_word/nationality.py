@@ -149,7 +149,7 @@ def lookup_authors(
     fetched_count = 0
 
     for i, author in enumerate(author_list):
-        if cache[author]:
+        if cache.get(author):
             results[author] = cache[author]
             print(f"[{i + 1}/{len(author_list)}] {author}: {cache[author] or 'NOT FOUND'} (cached)")
             continue

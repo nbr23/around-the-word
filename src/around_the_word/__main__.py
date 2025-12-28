@@ -4,7 +4,7 @@ from pathlib import Path
 
 from .map_generator import generate_map
 from .parsers import parse_goodreads_csv, parse_markdown_list
-from .nationality import lookup_authors
+from .nationality import lookup_authors, load_cache
 
 
 def main():
@@ -15,14 +15,12 @@ def main():
         "-i",
         "--input",
         type=Path,
-        required=True,
-        help="Input file path",
+        help="Input file path (not required with --cache-only)",
     )
     parser.add_argument(
         "-f",
         "--format",
         choices=["goodreads", "markdown"],
-        required=True,
         help="Input format: goodreads (CSV export) or markdown (- Title - Authors)",
     )
     parser.add_argument(
@@ -45,26 +43,45 @@ def main():
         type=Path,
         help="JSON file to cache author nationalities (enables manual corrections)",
     )
+    parser.add_argument(
+        "--cache-only",
+        action="store_true",
+        help="Skip lookups and regenerate map from cache only",
+    )
 
     args = parser.parse_args()
 
-    if not args.input.exists():
-        print(f"Error: File not found: {args.input}", file=sys.stderr)
-        sys.exit(1)
-
-    print(f"Parsing {args.input}...")
-    if args.format == "goodreads":
-        authors = parse_goodreads_csv(args.input)
+    if args.cache_only:
+        if not args.cache:
+            print("Error: --cache-only requires --cache", file=sys.stderr)
+            sys.exit(1)
+        if not args.cache.exists():
+            print(f"Error: Cache file not found: {args.cache}", file=sys.stderr)
+            sys.exit(1)
+        print(f"Loading cache: {args.cache}")
+        author_countries = load_cache(args.cache)
+        print(f"Loaded {len(author_countries)} authors from cache")
     else:
-        authors = parse_markdown_list(args.input)
-    print(f"Found {len(authors)} unique authors\n")
+        if not args.input or not args.format:
+            print("Error: -i/--input and -f/--format are required unless using --cache-only", file=sys.stderr)
+            sys.exit(1)
+        if not args.input.exists():
+            print(f"Error: File not found: {args.input}", file=sys.stderr)
+            sys.exit(1)
 
-    if not authors:
-        print("No authors found.", file=sys.stderr)
-        sys.exit(1)
+        print(f"Parsing {args.input}...")
+        if args.format == "goodreads":
+            authors = parse_goodreads_csv(args.input)
+        else:
+            authors = parse_markdown_list(args.input)
+        print(f"Found {len(authors)} unique authors\n")
 
-    print("Looking up author nationalities...")
-    author_countries = lookup_authors(authors, delay=args.delay, cache_path=args.cache)
+        if not authors:
+            print("No authors found.", file=sys.stderr)
+            sys.exit(1)
+
+        print("Looking up author nationalities...")
+        author_countries = lookup_authors(authors, delay=args.delay, cache_path=args.cache)
 
     if sum(1 for c in author_countries.values() if c) > 0:
         print(f"\nGenerating map: {args.output}")
