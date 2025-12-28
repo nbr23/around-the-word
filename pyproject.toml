@@ -1,0 +1,17 @@
+[project]
+name = "around-the-word"
+version = "0.0.1"
+description = "Visualize a book list's author nationalities as a world heatmap"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+    { name = "nbr23", email = "max@23.tf" }
+]
+dependencies = [
+    "requests",
+    "plotly",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.6,<0.10.0"]
+build-backend = "uv_build"
