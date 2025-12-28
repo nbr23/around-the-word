@@ -64,12 +64,16 @@ def get_nationality_wikipedia(author_name: str) -> Optional[str]:
 
         extract = data.get("extract", "")
 
-        # Common patterns: "X is a(n) [nationality] [writer/author/novelist]"
+        # Common patterns
         patterns = [
             r"(?:is|was) an? ([A-Z][a-z]+(?:-[A-Z][a-z]+)?)\s+(?:writer|author|novelist|poet|playwright|essayist)",
             r"(?:is|was) an? ([A-Z][a-z]+(?:-[A-Z][a-z]+)?)\s+(?:and\s+)?(?:\w+\s+)?(?:writer|author|novelist)",
             r"\(.*?(\w+)\s+(?:writer|author|novelist)",
         ]
+
+        # Fallback: nationality appears after "is/was a/an" and sentence contains author-related word
+        if re.search(r"\b(?:writer|author|novelist|poet|playwright|essayist)\b", extract, re.IGNORECASE):
+            patterns.append(r"(?:is|was) an? ([A-Z][a-z]+(?:-[A-Z][a-z]+)?)\s+\w+")
 
         for pattern in patterns:
             match = re.search(pattern, extract)
