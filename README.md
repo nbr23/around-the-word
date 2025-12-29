@@ -49,3 +49,4 @@ uvx around-the-word --cache-only -c cache.json --top 10 -o map.html
 | `--colorscale` | Color scale for the map (default: "reds") |
 | `--legend` | Show legend with color scale |
 | `--top N` | Show top N countries in legend (implies `--legend`) |
+| `--include-authors` | Include author names in map hover tooltips |

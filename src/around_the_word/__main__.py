@@ -83,6 +83,11 @@ def main():
         metavar="N",
         help="Show top N countries in legend (implies --legend)",
     )
+    parser.add_argument(
+        "--include-authors",
+        action="store_true",
+        help="Include author names in map hover tooltips",
+    )
 
     args = parser.parse_args()
 
@@ -133,6 +138,7 @@ def main():
             colorscale=args.colorscale,
             show_legend=args.legend,
             top_n=args.top,
+            include_authors=args.include_authors,
         )
         print(f"Map saved to: {output.absolute()}")
     else:

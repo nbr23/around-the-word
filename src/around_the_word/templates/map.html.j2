@@ -67,6 +67,12 @@
     .tooltip-count {
       color: #ccc;
     }
+    .tooltip-authors {
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px solid rgba(255,255,255,0.2);
+      font-size: 12px;
+    }
     .legend {
       position: fixed;
       bottom: 20px;
@@ -118,6 +124,7 @@
   <div class="tooltip" id="tooltip">
     <div class="tooltip-country"></div>
     <div class="tooltip-count"></div>
+    <div class="tooltip-authors"></div>
   </div>
   {% if show_legend %}
   <div class="legend">
@@ -136,6 +143,7 @@
     const topoData = {{ topojson_data | safe }};
     const authorCounts = {{ author_counts | safe }};
     const colorScale = {{ color_scale | safe }};
+    const authorsByCountry = {{ authors_by_country | tojson }};
 
     const countryNameMap = {
       "United States": "United States of America",
@@ -205,6 +213,7 @@
     const tooltip = document.getElementById('tooltip');
     const tooltipCountry = tooltip.querySelector('.tooltip-country');
     const tooltipCount = tooltip.querySelector('.tooltip-count');
+    const tooltipAuthors = tooltip.querySelector('.tooltip-authors');
 
     function showTooltip(event, d) {
       const topoName = d.properties.name;
@@ -213,6 +222,10 @@
 
       tooltipCountry.textContent = displayName;
       tooltipCount.textContent = count > 0 ? `${count} author${count !== 1 ? 's' : ''}` : 'No authors';
+
+      const authors = authorsByCountry[displayName] || [];
+      tooltipAuthors.innerHTML = authors.map(a => `<div>${a}</div>`).join('');
+
       tooltip.classList.add('visible');
       moveTooltip(event);
     }

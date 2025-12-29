@@ -80,6 +80,7 @@ def generate_map(
     colorscale: str = "reds",
     show_legend: bool = False,
     top_n: int | None = None,
+    include_authors: bool = False,
 ) -> Path:
     authors_by_country: dict[str, list[str]] = defaultdict(list)
     for author, country in author_countries.items():
@@ -106,6 +107,7 @@ def generate_map(
         color_scale=f'"{d3_color_scale}"',
         show_legend=show_legend,
         top_n=top_n or 0,
+        authors_by_country=dict(authors_by_country) if include_authors else {},
     )
 
     output_path = Path(output_path)
