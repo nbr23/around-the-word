@@ -9,7 +9,7 @@ authors = [
 ]
 dependencies = [
     "requests",
-    "plotly",
+    "jinja2",
 ]
 
 [project.scripts]
@@ -19,6 +19,9 @@ around-the-word = "around_the_word.__main__:main"
 Homepage = "https://www.github.com/nbr23/around-the-word"
 Repository = "https://www.github.com/nbr23/around-the-word"
 Issues = "https://github.com/nbr23/around-the-word/issues"
+
+[tool.uv]
+package = true
 
 [build-system]
 requires = ["uv_build>=0.9.6,<0.10.0"]

@@ -58,11 +58,6 @@ def main():
         help="Skip lookups and regenerate map from cache only",
     )
     parser.add_argument(
-        "--include-authors",
-        action="store_true",
-        help="Include author names in map hover tooltips",
-    )
-    parser.add_argument(
         "--map-title",
         default="Authors by Nationality",
         help="Title displayed on the map (default: 'Authors by Nationality')",
@@ -73,14 +68,9 @@ def main():
         help="HTML document title (default: 'Around the Word')",
     )
     parser.add_argument(
-        "--static",
-        action="store_true",
-        help="Generate fully self-contained HTML with no external dependencies",
-    )
-    parser.add_argument(
         "--colorscale",
-        default="Reds",
-        help="Plotly colorscale for the map (default: 'Reds')",
+        default="reds",
+        help="Color scale for the map: reds, blues, greens, viridis, etc. (default: 'reds')",
     )
 
     args = parser.parse_args()
@@ -121,7 +111,7 @@ def main():
 
     if sum(1 for c in author_countries.values() if c) > 0:
         print(f"\nGenerating map: {args.output}")
-        output = generate_map(author_countries, args.output, include_authors=args.include_authors, map_title=args.map_title, page_title=args.title, static=args.static, colorscale=args.colorscale)
+        output = generate_map(author_countries, args.output, map_title=args.map_title, page_title=args.title, colorscale=args.colorscale)
         print(f"Map saved to: {output.absolute()}")
     else:
         print("\nNo nationality data found - skipping map generation.")

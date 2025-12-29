@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ page_title }}</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f5f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    h1 {
+      text-align: center;
+      padding: 1rem;
+      font-size: 1.5rem;
+      color: #333;
+      background: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    #map-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+    }
+    svg {
+      max-width: 100%;
+      height: auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .country {
+      stroke: #fff;
+      stroke-width: 0.5;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .country:hover {
+      opacity: 0.8;
+    }
+    .tooltip {
+      position: fixed;
+      background: rgba(0,0,0,0.85);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 1000;
+      max-width: 200px;
+    }
+    .tooltip.visible {
+      opacity: 1;
+    }
+    .tooltip-country {
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    .tooltip-count {
+      color: #ccc;
+    }
+    .legend {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: white;
+      padding: 12px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      font-size: 12px;
+    }
+    .legend-title {
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .legend-scale {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .legend-bar {
+      width: 120px;
+      height: 12px;
+      border-radius: 2px;
+    }
+    @media (max-width: 600px) {
+      h1 { font-size: 1.2rem; padding: 0.75rem; }
+      .legend { bottom: 10px; right: 10px; padding: 8px; font-size: 11px; }
+      .legend-bar { width: 80px; }
+    }
+  </style>
+</head>
+<body>
+  <h1>{{ map_title }}</h1>
+  <div id="map-container"></div>
+  <div class="tooltip" id="tooltip">
+    <div class="tooltip-country"></div>
+    <div class="tooltip-count"></div>
+  </div>
+  <div class="legend">
+    <div class="legend-title">Authors</div>
+    <div class="legend-scale">
+      <span>0</span>
+      <div class="legend-bar" id="legend-bar"></div>
+      <span id="legend-max"></span>
+    </div>
+  </div>
+  <script>{{ d3_js | safe }}</script>
+  <script>{{ topojson_js | safe }}</script>
+  <script>
+    const topoData = {{ topojson_data | safe }};
+    const authorCounts = {{ author_counts | safe }};
+    const colorScale = {{ color_scale | safe }};
+
+    const countryNameMap = {
+      "United States": "United States of America",
+      "Czech Republic": "Czechia",
+      "Dominican Republic": "Dominican Rep.",
+      "Ivory Coast": "Côte d'Ivoire",
+      "Central African Republic": "Central African Rep.",
+      "Equatorial Guinea": "Eq. Guinea",
+      "North Macedonia": "Macedonia",
+      "Bosnia and Herzegovina": "Bosnia and Herz.",
+      "Swaziland": "eSwatini",
+      "South Sudan": "S. Sudan",
+      "Congo": "Dem. Rep. Congo",
+      "Trinidad and Tobago": "Trinidad and Tobago"
+    };
+
+    const topoToDisplayName = {};
+    Object.entries(countryNameMap).forEach(([display, topo]) => {
+      topoToDisplayName[topo] = display;
+    });
+
+    const dataByTopoName = {};
+    Object.entries(authorCounts).forEach(([name, count]) => {
+      const topoName = countryNameMap[name] || name;
+      dataByTopoName[topoName] = count;
+    });
+
+    const maxCount = Math.max(...Object.values(authorCounts), 1);
+
+    const container = document.getElementById('map-container');
+    const width = Math.min(960, container.clientWidth - 32);
+    const height = width * 0.5;
+
+    const svg = d3.select('#map-container')
+      .append('svg')
+      .attr('viewBox', `0 0 ${width} ${height}`)
+      .attr('preserveAspectRatio', 'xMidYMid meet');
+
+    const projection = d3.geoNaturalEarth1()
+      .scale(width / 5.5)
+      .translate([width / 2, height / 2]);
+
+    const path = d3.geoPath().projection(projection);
+
+    const color = d3.scaleSequential()
+      .domain([0, maxCount])
+      .interpolator(d3[colorScale] || d3.interpolateReds);
+
+    const countries = topojson.feature(topoData, topoData.objects.countries);
+
+    svg.selectAll('.country')
+      .data(countries.features)
+      .enter()
+      .append('path')
+      .attr('class', 'country')
+      .attr('d', path)
+      .attr('fill', d => {
+        const name = d.properties.name;
+        const count = dataByTopoName[name] || 0;
+        return count > 0 ? color(count) : '#e0e0e0';
+      })
+      .on('mouseover', showTooltip)
+      .on('mousemove', moveTooltip)
+      .on('mouseout', hideTooltip)
+      .on('touchstart', showTooltip, { passive: true })
+      .on('touchend', hideTooltip, { passive: true });
+
+    const tooltip = document.getElementById('tooltip');
+    const tooltipCountry = tooltip.querySelector('.tooltip-country');
+    const tooltipCount = tooltip.querySelector('.tooltip-count');
+
+    function showTooltip(event, d) {
+      const topoName = d.properties.name;
+      const displayName = topoToDisplayName[topoName] || topoName;
+      const count = dataByTopoName[topoName] || 0;
+
+      tooltipCountry.textContent = displayName;
+      tooltipCount.textContent = count > 0 ? `${count} author${count !== 1 ? 's' : ''}` : 'No authors';
+      tooltip.classList.add('visible');
+      moveTooltip(event);
+    }
+
+    function moveTooltip(event) {
+      const e = event.touches ? event.touches[0] : event;
+      const x = e.clientX;
+      const y = e.clientY;
+
+      const rect = tooltip.getBoundingClientRect();
+      const left = Math.min(x + 10, window.innerWidth - rect.width - 10);
+      const top = Math.min(y + 10, window.innerHeight - rect.height - 10);
+
+      tooltip.style.left = left + 'px';
+      tooltip.style.top = top + 'px';
+    }
+
+    function hideTooltip() {
+      tooltip.classList.remove('visible');
+    }
+
+    const legendBar = document.getElementById('legend-bar');
+    const legendMax = document.getElementById('legend-max');
+    legendMax.textContent = maxCount;
+
+    const gradientStops = [];
+    for (let i = 0; i <= 10; i++) {
+      gradientStops.push(color(maxCount * i / 10));
+    }
+    legendBar.style.background = `linear-gradient(to right, ${gradientStops.join(', ')})`;
+
+    window.addEventListener('resize', () => {
+      const newWidth = Math.min(960, container.clientWidth - 32);
+      const newHeight = newWidth * 0.5;
+      projection.scale(newWidth / 5.5).translate([newWidth / 2, newHeight / 2]);
+      svg.attr('viewBox', `0 0 ${newWidth} ${newHeight}`);
+      svg.selectAll('.country').attr('d', path);
+    });
+  </script>
+</body>
+</html>
