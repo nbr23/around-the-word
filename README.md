@@ -44,3 +44,4 @@ uvx around-the-word --cache-only -c cache.json -o map.html
 | `--include-authors` | Include author names in map hover tooltips |
 | `--map-title` | Title displayed on the map (default: "Authors by Nationality") |
 | `--title` | HTML document title (default: "Around the Word") |
+| `--static` | Generate fully self-contained HTML with no external dependencies |

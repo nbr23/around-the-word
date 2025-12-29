@@ -72,6 +72,11 @@ def main():
         default="Around the Word",
         help="HTML document title (default: 'Around the Word')",
     )
+    parser.add_argument(
+        "--static",
+        action="store_true",
+        help="Generate fully self-contained HTML with no external dependencies",
+    )
 
     args = parser.parse_args()
 
@@ -111,7 +116,7 @@ def main():
 
     if sum(1 for c in author_countries.values() if c) > 0:
         print(f"\nGenerating map: {args.output}")
-        output = generate_map(author_countries, args.output, include_authors=args.include_authors, map_title=args.map_title, page_title=args.title)
+        output = generate_map(author_countries, args.output, include_authors=args.include_authors, map_title=args.map_title, page_title=args.title, static=args.static)
         print(f"Map saved to: {output.absolute()}")
     else:
         print("\nNo nationality data found - skipping map generation.")
