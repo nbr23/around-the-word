@@ -67,6 +67,11 @@ def main():
         default="Authors by Nationality",
         help="Title displayed on the map (default: 'Authors by Nationality')",
     )
+    parser.add_argument(
+        "--title",
+        default="Around the Word",
+        help="HTML document title (default: 'Around the Word')",
+    )
 
     args = parser.parse_args()
 
@@ -106,7 +111,7 @@ def main():
 
     if sum(1 for c in author_countries.values() if c) > 0:
         print(f"\nGenerating map: {args.output}")
-        output = generate_map(author_countries, args.output, include_authors=args.include_authors, title=args.map_title)
+        output = generate_map(author_countries, args.output, include_authors=args.include_authors, map_title=args.map_title, page_title=args.title)
         print(f"Map saved to: {output.absolute()}")
     else:
         print("\nNo nationality data found - skipping map generation.")

@@ -9,7 +9,8 @@ def generate_map(
     author_countries: dict[str, Optional[str]],
     output_path: str | Path = "author_map.html",
     include_authors: bool = False,
-    title: str = "Authors by Nationality",
+    map_title: str = "Authors by Nationality",
+    page_title: str = "Around the Word",
 ) -> Path:
     authors_by_country: dict[str, list[str]] = defaultdict(list)
     for author, country in author_countries.items():
@@ -56,7 +57,7 @@ def generate_map(
         )
 
     fig.update_layout(
-        title_text=title,
+        title_text=map_title,
         geo=dict(
             showframe=False,
             showcoastlines=True,
@@ -66,6 +67,8 @@ def generate_map(
     )
 
     output_path = Path(output_path)
-    fig.write_html(output_path, config={"displayModeBar": False})
+    html_content = fig.to_html(config={"displayModeBar": False})
+    html_content = html_content.replace("<head>", f"<head><title>{page_title}</title>", 1)
+    output_path.write_text(html_content)
 
     return output_path
