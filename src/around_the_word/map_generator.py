@@ -9,6 +9,7 @@ def generate_map(
     author_countries: dict[str, Optional[str]],
     output_path: str | Path = "author_map.html",
     include_authors: bool = False,
+    title: str = "Authors by Nationality",
 ) -> Path:
     authors_by_country: dict[str, list[str]] = defaultdict(list)
     for author, country in author_countries.items():
@@ -55,7 +56,7 @@ def generate_map(
         )
 
     fig.update_layout(
-        title_text="Authors by Nationality",
+        title_text=title,
         geo=dict(
             showframe=False,
             showcoastlines=True,

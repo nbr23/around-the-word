@@ -62,6 +62,11 @@ def main():
         action="store_true",
         help="Include author names in map hover tooltips",
     )
+    parser.add_argument(
+        "--map-title",
+        default="Authors by Nationality",
+        help="Title displayed on the map (default: 'Authors by Nationality')",
+    )
 
     args = parser.parse_args()
 
@@ -101,7 +106,7 @@ def main():
 
     if sum(1 for c in author_countries.values() if c) > 0:
         print(f"\nGenerating map: {args.output}")
-        output = generate_map(author_countries, args.output, include_authors=args.include_authors)
+        output = generate_map(author_countries, args.output, include_authors=args.include_authors, title=args.map_title)
         print(f"Map saved to: {output.absolute()}")
     else:
         print("\nNo nationality data found - skipping map generation.")
