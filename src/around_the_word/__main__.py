@@ -48,6 +48,11 @@ def main():
         action="store_true",
         help="Skip lookups and regenerate map from cache only",
     )
+    parser.add_argument(
+        "--include-authors",
+        action="store_true",
+        help="Include author names in map hover tooltips",
+    )
 
     args = parser.parse_args()
 
@@ -85,7 +90,7 @@ def main():
 
     if sum(1 for c in author_countries.values() if c) > 0:
         print(f"\nGenerating map: {args.output}")
-        output = generate_map(author_countries, args.output)
+        output = generate_map(author_countries, args.output, include_authors=args.include_authors)
         print(f"Map saved to: {output.absolute()}")
     else:
         print("\nNo nationality data found - skipping map generation.")
