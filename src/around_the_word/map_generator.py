@@ -66,6 +66,6 @@ def generate_map(
     )
 
     output_path = Path(output_path)
-    fig.write_html(output_path)
+    fig.write_html(output_path, config={"displayModeBar": False})
 
     return output_path
