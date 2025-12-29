@@ -4,7 +4,7 @@ from importlib.metadata import version
 from pathlib import Path
 
 from .map_generator import generate_map
-from .parsers import parse_goodreads_csv, parse_markdown_list
+from .parsers import parse_goodreads_csv, parse_markdown_list, parse_stdin
 from .nationality import lookup_authors, load_cache
 
 __version__ = version("around-the-word")
@@ -107,18 +107,25 @@ def main():
         author_countries = load_cache(args.cache)
         print(f"Loaded {len(author_countries)} authors from cache")
     else:
-        if not args.input or not args.format:
-            print("Error: -i/--input and -f/--format are required unless using --cache-only", file=sys.stderr)
-            sys.exit(1)
-        if not args.input.exists():
-            print(f"Error: File not found: {args.input}", file=sys.stderr)
-            sys.exit(1)
-
-        print(f"Parsing {args.input}...")
-        if args.format == "goodreads":
-            authors = parse_goodreads_csv(args.input)
+        if args.input:
+            if not args.format:
+                print("Error: -f/--format is required with -i/--input", file=sys.stderr)
+                sys.exit(1)
+            if not args.input.exists():
+                print(f"Error: File not found: {args.input}", file=sys.stderr)
+                sys.exit(1)
+            print(f"Parsing {args.input}...")
+            if args.format == "goodreads":
+                authors = parse_goodreads_csv(args.input)
+            else:
+                authors = parse_markdown_list(args.input)
         else:
-            authors = parse_markdown_list(args.input)
+            if sys.stdin.isatty():
+                print("Error: No input. Provide -i/--input or pipe author names to stdin", file=sys.stderr)
+                sys.exit(1)
+            print("Reading authors from stdin...")
+            authors = parse_stdin()
+
         print(f"Found {len(authors)} unique authors\n")
 
         if not authors:

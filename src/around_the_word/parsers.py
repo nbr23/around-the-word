@@ -1,4 +1,5 @@
 import csv
+import sys
 from pathlib import Path
 
 
@@ -47,4 +48,14 @@ def parse_markdown_list(filepath: str | Path) -> set[str]:
                 if author:
                     authors.add(author)
 
+    return authors
+
+
+def parse_stdin() -> set[str]:
+    authors = set()
+    for line in sys.stdin:
+        for author in line.split(","):
+            name = author.strip()
+            if name:
+                authors.add(name)
     return authors

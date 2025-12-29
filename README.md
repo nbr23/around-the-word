@@ -31,6 +31,11 @@ uvx around-the-word --cache-only -c cache.json -o map.html
 
 # With legend and top 10 countries
 uvx around-the-word --cache-only -c cache.json --top 10 -o map.html
+
+# From stdin (one author per line, or comma-separated)
+echo "Stephen King" | uvx around-the-word -c cache.json -o map.html
+cat authors.txt | uvx around-the-word -c cache.json -o map.html
+echo "King, Rowling, Pratchett" | uvx around-the-word -c cache.json
 ```
 
 ## Options
@@ -38,7 +43,7 @@ uvx around-the-word --cache-only -c cache.json --top 10 -o map.html
 | Flag | Description |
 |------|-------------|
 | `-v, --version` | Show version and exit |
-| `-i, --input` | Input file path |
+| `-i, --input` | Input file path (or pipe author names to stdin) |
 | `-f, --format` | Input format: `goodreads` or `markdown` |
 | `-o, --output` | Output HTML file (default: `author_map.html`) |
 | `-d, --delay` | Delay between API requests in seconds (default: 0.5) |
