@@ -1,7 +1,14 @@
+import urllib.request
 from collections import defaultdict
 from pathlib import Path
 
 from jinja2 import Environment, PackageLoader
+
+ASSET_URLS = {
+    "d3.v7.min.js": "https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js",
+    "topojson-client.min.js": "https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js",
+    "world-110m.json": "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json",
+}
 
 # D3 color scale names mapping
 COLOR_SCALES = {
@@ -25,11 +32,44 @@ COLOR_SCALES = {
 _assets_cache: dict[str, str] = {}
 
 
+def _get_cache_dir() -> Path | None:
+    cache_dir = Path.home() / ".cache" / "around-the-word"
+    try:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        return cache_dir
+    except OSError:
+        pass
+    tmp_dir = Path("/tmp/around-the-word")
+    try:
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        return tmp_dir
+    except OSError:
+        return None
+
+
 def _load_asset(name: str) -> str:
-    if name not in _assets_cache:
-        assets_dir = Path(__file__).parent / "assets"
-        _assets_cache[name] = (assets_dir / name).read_text()
-    return _assets_cache[name]
+    if name in _assets_cache:
+        return _assets_cache[name]
+
+    cache_dir = _get_cache_dir()
+    if cache_dir:
+        cached_file = cache_dir / name
+        if cached_file.exists():
+            _assets_cache[name] = cached_file.read_text()
+            return _assets_cache[name]
+
+    url = ASSET_URLS.get(name)
+    if not url:
+        raise ValueError(f"Unknown asset: {name}")
+
+    with urllib.request.urlopen(url) as response:
+        content = response.read().decode("utf-8")
+
+    _assets_cache[name] = content
+    if cache_dir:
+        (cache_dir / name).write_text(content)
+
+    return content
 
 
 def generate_map(
