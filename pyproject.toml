@@ -1,6 +1,6 @@
 [project]
 name = "around-the-word"
-version = "1.0.0"
+version = "1.1.0"
 description = "Visualize a book list's author nationalities as a world heatmap"
 requires-python = ">=3.11"
 license = { text = "MIT" }
