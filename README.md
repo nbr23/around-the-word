@@ -45,3 +45,4 @@ uvx around-the-word --cache-only -c cache.json -o map.html
 | `--map-title` | Title displayed on the map (default: "Authors by Nationality") |
 | `--title` | HTML document title (default: "Around the Word") |
 | `--static` | Generate fully self-contained HTML with no external dependencies |
+| `--colorscale` | Plotly colorscale for the map (default: "Reds") |

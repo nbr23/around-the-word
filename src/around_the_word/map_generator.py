@@ -25,6 +25,7 @@ def generate_map(
     map_title: str = "Authors by Nationality",
     page_title: str = "Around the Word",
     static: bool = False,
+    colorscale: str = "Reds",
 ) -> Path:
     authors_by_country: dict[str, list[str]] = defaultdict(list)
     for author, country in author_countries.items():
@@ -52,7 +53,7 @@ def generate_map(
                 locations=countries,
                 locationmode="country names",
                 z=counts,
-                colorscale="Greens",
+                colorscale=colorscale,
                 showscale=False,
                 text=hover_texts,
                 hovertemplate="<b>%{location}</b><br>Authors: %{z}<br><br>%{text}<extra></extra>",
@@ -64,7 +65,7 @@ def generate_map(
                 locations=countries,
                 locationmode="country names",
                 z=counts,
-                colorscale="Greens",
+                colorscale=colorscale,
                 showscale=False,
                 hovertemplate="<b>%{location}</b><br>Authors: %{z}<extra></extra>",
             )
