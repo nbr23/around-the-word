@@ -91,6 +91,20 @@
       height: 12px;
       border-radius: 2px;
     }
+    .legend-list {
+      margin-top: 10px;
+      border-top: 1px solid #eee;
+      padding-top: 8px;
+    }
+    .legend-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 2px 0;
+    }
+    .legend-item-count {
+      color: #666;
+    }
     @media (max-width: 600px) {
       h1 { font-size: 1.2rem; padding: 0.75rem; }
       .legend { bottom: 10px; right: 10px; padding: 8px; font-size: 11px; }
@@ -112,6 +126,7 @@
       <div class="legend-bar" id="legend-bar"></div>
       <span id="legend-max"></span>
     </div>
+    <div class="legend-list" id="legend-list"></div>
   </div>
   <script>{{ d3_js | safe }}</script>
   <script>{{ topojson_js | safe }}</script>
@@ -226,6 +241,14 @@
       gradientStops.push(color(maxCount * i / 10));
     }
     legendBar.style.background = `linear-gradient(to right, ${gradientStops.join(', ')})`;
+
+    const top10 = Object.entries(authorCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10);
+    const legendList = document.getElementById('legend-list');
+    legendList.innerHTML = top10.map(([country, count]) =>
+      `<div class="legend-item"><span>${country}</span><span class="legend-item-count">${count}</span></div>`
+    ).join('');
 
     window.addEventListener('resize', () => {
       const newWidth = container.clientWidth;
