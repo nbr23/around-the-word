@@ -78,6 +78,8 @@ def generate_map(
     map_title: str = "Authors by Nationality",
     page_title: str = "Around the Word",
     colorscale: str = "reds",
+    show_legend: bool = False,
+    top_n: int | None = None,
 ) -> Path:
     authors_by_country: dict[str, list[str]] = defaultdict(list)
     for author, country in author_countries.items():
@@ -102,6 +104,8 @@ def generate_map(
         topojson_data=_load_asset("world-110m.json"),
         author_counts=author_counts,
         color_scale=f'"{d3_color_scale}"',
+        show_legend=show_legend,
+        top_n=top_n or 0,
     )
 
     output_path = Path(output_path)

@@ -28,6 +28,9 @@ uvx around-the-word -i export.csv -f goodreads -c cache.json -o map.html
 
 # Regenerate map from cache only (no API calls)
 uvx around-the-word --cache-only -c cache.json -o map.html
+
+# With legend and top 10 countries
+uvx around-the-word --cache-only -c cache.json --top 10 -o map.html
 ```
 
 ## Options
@@ -41,8 +44,8 @@ uvx around-the-word --cache-only -c cache.json -o map.html
 | `-d, --delay` | Delay between API requests in seconds (default: 0.5) |
 | `-c, --cache` | JSON cache file for author nationalities |
 | `--cache-only` | Regenerate map from cache without lookups |
-| `--include-authors` | Include author names in map hover tooltips |
 | `--map-title` | Title displayed on the map (default: "Authors by Nationality") |
 | `--title` | HTML document title (default: "Around the Word") |
-| `--static` | Generate fully self-contained HTML with no external dependencies |
-| `--colorscale` | Plotly colorscale for the map (default: "Reds") |
+| `--colorscale` | Color scale for the map (default: "reds") |
+| `--legend` | Show legend with color scale |
+| `--top N` | Show top N countries in legend (implies `--legend`) |

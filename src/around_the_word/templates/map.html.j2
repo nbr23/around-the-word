@@ -119,6 +119,7 @@
     <div class="tooltip-country"></div>
     <div class="tooltip-count"></div>
   </div>
+  {% if show_legend %}
   <div class="legend">
     <div class="legend-title">Authors</div>
     <div class="legend-scale">
@@ -126,8 +127,9 @@
       <div class="legend-bar" id="legend-bar"></div>
       <span id="legend-max"></span>
     </div>
-    <div class="legend-list" id="legend-list"></div>
+    {% if top_n %}<div class="legend-list" id="legend-list"></div>{% endif %}
   </div>
+  {% endif %}
   <script>{{ d3_js | safe }}</script>
   <script>{{ topojson_js | safe }}</script>
   <script>
@@ -232,6 +234,7 @@
       tooltip.classList.remove('visible');
     }
 
+    {% if show_legend %}
     const legendBar = document.getElementById('legend-bar');
     const legendMax = document.getElementById('legend-max');
     legendMax.textContent = maxCount;
@@ -241,14 +244,16 @@
       gradientStops.push(color(maxCount * i / 10));
     }
     legendBar.style.background = `linear-gradient(to right, ${gradientStops.join(', ')})`;
-
-    const top10 = Object.entries(authorCounts)
+    {% if top_n %}
+    const topN = Object.entries(authorCounts)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 10);
+      .slice(0, {{ top_n }});
     const legendList = document.getElementById('legend-list');
-    legendList.innerHTML = top10.map(([country, count]) =>
+    legendList.innerHTML = topN.map(([country, count]) =>
       `<div class="legend-item"><span>${country}</span><span class="legend-item-count">${count}</span></div>`
     ).join('');
+    {% endif %}
+    {% endif %}
 
     window.addEventListener('resize', () => {
       const newWidth = container.clientWidth;

@@ -72,8 +72,22 @@ def main():
         default="reds",
         help="Color scale for the map: reds, blues, greens, viridis, etc. (default: 'reds')",
     )
+    parser.add_argument(
+        "--legend",
+        action="store_true",
+        help="Show legend with color scale",
+    )
+    parser.add_argument(
+        "--top",
+        type=int,
+        metavar="N",
+        help="Show top N countries in legend (implies --legend)",
+    )
 
     args = parser.parse_args()
+
+    if args.top:
+        args.legend = True
 
     print(f"around-the-word v{__version__}")
 
@@ -111,7 +125,15 @@ def main():
 
     if sum(1 for c in author_countries.values() if c) > 0:
         print(f"\nGenerating map: {args.output}")
-        output = generate_map(author_countries, args.output, map_title=args.map_title, page_title=args.title, colorscale=args.colorscale)
+        output = generate_map(
+            author_countries,
+            args.output,
+            map_title=args.map_title,
+            page_title=args.title,
+            colorscale=args.colorscale,
+            show_legend=args.legend,
+            top_n=args.top,
+        )
         print(f"Map saved to: {output.absolute()}")
     else:
         print("\nNo nationality data found - skipping map generation.")
