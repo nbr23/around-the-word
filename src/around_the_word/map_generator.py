@@ -67,7 +67,7 @@ def generate_map(
     )
 
     output_path = Path(output_path)
-    html_content = fig.to_html(config={"displayModeBar": False})
+    html_content = fig.to_html(config={"displayModeBar": False}, include_plotlyjs=True)
     html_content = html_content.replace("<head>", f"<head><title>{page_title}</title>", 1)
     output_path.write_text(html_content)
 
