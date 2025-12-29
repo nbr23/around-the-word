@@ -1,15 +1,24 @@
 import argparse
 import sys
+from importlib.metadata import version
 from pathlib import Path
 
 from .map_generator import generate_map
 from .parsers import parse_goodreads_csv, parse_markdown_list
 from .nationality import lookup_authors, load_cache
 
+__version__ = version("around-the-word")
+
 
 def main():
     parser = argparse.ArgumentParser(
         description="Visualize author nationalities as a world heatmap"
+    )
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
     )
     parser.add_argument(
         "-i",
@@ -55,6 +64,8 @@ def main():
     )
 
     args = parser.parse_args()
+
+    print(f"around-the-word v{__version__}")
 
     if args.cache_only:
         if not args.cache:

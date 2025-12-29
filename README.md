@@ -34,6 +34,7 @@ uvx around-the-word --cache-only -c cache.json -o map.html
 
 | Flag | Description |
 |------|-------------|
+| `-v, --version` | Show version and exit |
 | `-i, --input` | Input file path |
 | `-f, --format` | Input format: `goodreads` or `markdown` |
 | `-o, --output` | Output HTML file (default: `author_map.html`) |
