@@ -12,6 +12,9 @@ dependencies = [
     "plotly",
 ]
 
+[project.scripts]
+around-the-word = "around_the_word.__main__:main"
+
 [project.urls]
 Homepage = "https://www.github.com/nbr23/around-the-word"
 Repository = "https://www.github.com/nbr23/around-the-word"
