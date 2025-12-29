@@ -40,3 +40,4 @@ uvx around-the-word --cache-only -c cache.json -o map.html
 | `-d, --delay` | Delay between API requests in seconds (default: 0.5) |
 | `-c, --cache` | JSON cache file for author nationalities |
 | `--cache-only` | Regenerate map from cache without lookups |
+| `--include-authors` | Include author names in map hover tooltips |
