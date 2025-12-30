@@ -1,6 +1,6 @@
 # around-the-word
 
-Visualize author nationalities from your "books read" list as an interactive world heatmap.
+Visualize author birthplaces from your "books read" list as an interactive world heatmap.
 
 ## Install
 
@@ -47,9 +47,9 @@ echo "King, Rowling, Pratchett" | uvx around-the-word -c cache.json
 | `-f, --format` | Input format: `goodreads` or `markdown` |
 | `-o, --output` | Output HTML file (default: `author_map.html`) |
 | `-d, --delay` | Delay between API requests in seconds (default: 0.5) |
-| `-c, --cache` | JSON cache file for author nationalities |
+| `-c, --cache` | JSON cache file for author birthplaces |
 | `--cache-only` | Regenerate map from cache without lookups |
-| `--map-title` | Title displayed on the map (default: "Authors by Nationality") |
+| `--map-title` | Title displayed on the map (default: "Authors by Birthplace") |
 | `--title` | HTML document title (default: "Around the Word") |
 | `--colorscale` | Color scale for the map (default: "reds") |
 | `--legend` | Show legend with color scale |
