@@ -59,8 +59,8 @@ def main():
     )
     parser.add_argument(
         "--map-title",
-        default="Authors by Nationality",
-        help="Title displayed on the map (default: 'Authors by Nationality')",
+        default=None,
+        help="Title displayed on the map (default: 'Authors by Nationality' or 'Books by Author Nationality')",
     )
     parser.add_argument(
         "--title",
@@ -88,13 +88,27 @@ def main():
         action="store_true",
         help="Include author names in map hover tooltips",
     )
+    parser.add_argument(
+        "--count-by",
+        choices=["authors", "books"],
+        default="authors",
+        help="Count by unique authors or total books (default: authors)",
+    )
 
     args = parser.parse_args()
 
     if args.top:
         args.legend = True
 
+    if args.map_title is None:
+        if args.count_by == "books":
+            args.map_title = "Books by Author Nationality"
+        else:
+            args.map_title = "Authors by Nationality"
+
     print(f"around-the-word v{__version__}")
+
+    book_author_pairs = []
 
     if args.cache_only:
         if not args.cache:
@@ -106,6 +120,23 @@ def main():
         print(f"Loading cache: {args.cache}")
         author_countries = load_cache(args.cache)
         print(f"Loaded {len(author_countries)} authors from cache")
+
+        if args.count_by == "books":
+            if not args.input:
+                print("Error: --count-by books requires --input even with --cache-only", file=sys.stderr)
+                sys.exit(1)
+            if not args.format:
+                print("Error: -f/--format is required with -i/--input", file=sys.stderr)
+                sys.exit(1)
+            if not args.input.exists():
+                print(f"Error: File not found: {args.input}", file=sys.stderr)
+                sys.exit(1)
+            print(f"Parsing {args.input} for book counts...")
+            if args.format == "goodreads":
+                book_author_pairs = parse_goodreads_csv(args.input)
+            else:
+                book_author_pairs = parse_markdown_list(args.input)
+            print(f"Found {len(book_author_pairs)} book-author entries")
     else:
         if args.input:
             if not args.format:
@@ -116,16 +147,17 @@ def main():
                 sys.exit(1)
             print(f"Parsing {args.input}...")
             if args.format == "goodreads":
-                authors = parse_goodreads_csv(args.input)
+                book_author_pairs = parse_goodreads_csv(args.input)
             else:
-                authors = parse_markdown_list(args.input)
+                book_author_pairs = parse_markdown_list(args.input)
         else:
             if sys.stdin.isatty():
                 print("Error: No input. Provide -i/--input or pipe author names to stdin", file=sys.stderr)
                 sys.exit(1)
             print("Reading authors from stdin...")
-            authors = parse_stdin()
+            book_author_pairs = parse_stdin()
 
+        authors = {author for author, _ in book_author_pairs}
         print(f"Found {len(authors)} unique authors\n")
 
         if not authors:
@@ -140,6 +172,8 @@ def main():
         output = generate_map(
             author_countries,
             args.output,
+            book_author_pairs=book_author_pairs,
+            count_by=args.count_by,
             map_title=args.map_title,
             page_title=args.title,
             colorscale=args.colorscale,

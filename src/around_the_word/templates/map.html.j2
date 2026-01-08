@@ -129,7 +129,7 @@
   </div>
   {% if show_legend %}
   <div class="legend">
-    <div class="legend-title">Authors</div>
+    <div class="legend-title" id="legend-title"></div>
     <div class="legend-scale">
       <span>0</span>
       <div class="legend-bar" id="legend-bar"></div>
@@ -142,7 +142,8 @@
   <script>{{ topojson_js | safe }}</script>
   <script>
     const topoData = {{ topojson_data | safe }};
-    const authorCounts = {{ author_counts | safe }};
+    const counts = {{ counts | safe }};
+    const countLabel = "{{ count_label }}";
     const colorScale = {{ color_scale | safe }};
     const authorsByCountry = {{ authors_by_country | tojson }};
 
@@ -167,12 +168,12 @@
     });
 
     const dataByTopoName = {};
-    Object.entries(authorCounts).forEach(([name, count]) => {
+    Object.entries(counts).forEach(([name, count]) => {
       const topoName = countryNameMap[name] || name;
       dataByTopoName[topoName] = count;
     });
 
-    const maxCount = Math.max(...Object.values(authorCounts), 1);
+    const maxCount = Math.max(...Object.values(counts), 1);
 
     const container = document.getElementById('map-container');
     const width = container.clientWidth;
@@ -222,7 +223,7 @@
       const count = dataByTopoName[topoName] || 0;
 
       tooltipCountry.textContent = displayName;
-      tooltipCount.textContent = count > 0 ? `${count} author${count !== 1 ? 's' : ''}` : 'No authors';
+      tooltipCount.textContent = count > 0 ? `${count} ${countLabel}${count !== 1 ? 's' : ''}` : `No ${countLabel}s`;
 
       const authors = authorsByCountry[displayName] || [];
       tooltipAuthors.innerHTML = authors.map(a => `<div>${a}</div>`).join('');
@@ -249,6 +250,8 @@
     }
 
     {% if show_legend %}
+    const legendTitle = document.getElementById('legend-title');
+    legendTitle.textContent = countLabel.charAt(0).toUpperCase() + countLabel.slice(1) + 's';
     const legendBar = document.getElementById('legend-bar');
     const legendMax = document.getElementById('legend-max');
     legendMax.textContent = maxCount;
@@ -259,7 +262,7 @@
     }
     legendBar.style.background = `linear-gradient(to right, ${gradientStops.join(', ')})`;
     {% if top_n %}
-    const topN = Object.entries(authorCounts)
+    const topN = Object.entries(counts)
       .sort((a, b) => b[1] - a[1])
       .slice(0, {{ top_n }});
     const legendList = document.getElementById('legend-list');

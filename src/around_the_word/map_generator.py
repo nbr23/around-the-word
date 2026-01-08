@@ -75,6 +75,8 @@ def _load_asset(name: str) -> str:
 def generate_map(
     author_countries: dict[str, str | None],
     output_path: str | Path = "author_map.html",
+    book_author_pairs: list[tuple[str, str]] | None = None,
+    count_by: str = "authors",
     map_title: str = "Authors by Nationality",
     page_title: str = "Around the Word",
     colorscale: str = "reds",
@@ -90,7 +92,16 @@ def generate_map(
     if not authors_by_country:
         raise ValueError("No valid country data to map")
 
-    author_counts = {country: len(authors) for country, authors in authors_by_country.items()}
+    if count_by == "books" and book_author_pairs:
+        counts: dict[str, int] = defaultdict(int)
+        for author, _ in book_author_pairs:
+            country = author_countries.get(author)
+            if country:
+                counts[country] += 1
+        count_label = "book"
+    else:
+        counts = {country: len(authors) for country, authors in authors_by_country.items()}
+        count_label = "author"
 
     d3_color_scale = COLOR_SCALES.get(colorscale.lower(), "interpolateReds")
 
@@ -103,7 +114,8 @@ def generate_map(
         d3_js=_load_asset("d3.v7.min.js"),
         topojson_js=_load_asset("topojson-client.min.js"),
         topojson_data=_load_asset("world-110m.json"),
-        author_counts=author_counts,
+        counts=dict(counts),
+        count_label=count_label,
         color_scale=f'"{d3_color_scale}"',
         show_legend=show_legend,
         top_n=top_n or 0,
