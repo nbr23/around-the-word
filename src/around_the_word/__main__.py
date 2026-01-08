@@ -88,12 +88,6 @@ def main():
         action="store_true",
         help="Include author names in map hover tooltips",
     )
-    parser.add_argument(
-        "--count-by",
-        choices=["authors", "books"],
-        default="authors",
-        help="Count by unique authors or total books (default: authors)",
-    )
 
     args = parser.parse_args()
 
@@ -101,10 +95,7 @@ def main():
         args.legend = True
 
     if args.map_title is None:
-        if args.count_by == "books":
-            args.map_title = "Books by Author Nationality"
-        else:
-            args.map_title = "Authors by Nationality"
+        args.map_title = "Authors by Nationality"
 
     print(f"around-the-word v{__version__}")
 
@@ -121,10 +112,7 @@ def main():
         author_countries = load_cache(args.cache)
         print(f"Loaded {len(author_countries)} authors from cache")
 
-        if args.count_by == "books":
-            if not args.input:
-                print("Error: --count-by books requires --input even with --cache-only", file=sys.stderr)
-                sys.exit(1)
+        if args.input:
             if not args.format:
                 print("Error: -f/--format is required with -i/--input", file=sys.stderr)
                 sys.exit(1)
@@ -173,7 +161,6 @@ def main():
             author_countries,
             args.output,
             book_author_pairs=book_author_pairs,
-            count_by=args.count_by,
             map_title=args.map_title,
             page_title=args.title,
             colorscale=args.colorscale,

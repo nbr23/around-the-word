@@ -32,9 +32,6 @@ uvx around-the-word --cache-only -c cache.json -o map.html
 # With legend and top 10 countries
 uvx around-the-word --cache-only -c cache.json --top 10 -o map.html
 
-# Count by books instead of unique authors
-uvx around-the-word -i export.csv -f goodreads -c cache.json --count-by books -o map.html
-
 # From stdin (one author per line, or comma-separated)
 echo "Stephen King" | uvx around-the-word -c cache.json -o map.html
 cat authors.txt | uvx around-the-word -c cache.json -o map.html
@@ -58,4 +55,5 @@ echo "King, Rowling, Pratchett" | uvx around-the-word -c cache.json
 | `--legend` | Show legend with color scale |
 | `--top N` | Show top N countries in legend (implies `--legend`) |
 | `--include-authors` | Include author names in map hover tooltips |
-| `--count-by` | Count by `authors` (default) or `books` |
+
+When an input file is provided, the map includes a toggle to switch between counting unique authors or total books per country.

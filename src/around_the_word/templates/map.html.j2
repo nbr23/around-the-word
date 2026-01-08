@@ -112,15 +112,56 @@
     .legend-item-count {
       color: #666;
     }
+    .toggle-container {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 100;
+    }
+    .toggle {
+      display: inline-flex;
+      background: rgba(0,0,0,0.06);
+      border-radius: 4px;
+      padding: 2px;
+    }
+    .toggle-btn {
+      padding: 4px 10px;
+      border: none;
+      background: transparent;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 500;
+      color: #888;
+      transition: all 0.15s;
+    }
+    .toggle-btn.active {
+      background: white;
+      color: #555;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    .toggle-btn:hover:not(.active) {
+      color: #555;
+    }
     @media (max-width: 600px) {
       h1 { font-size: 1.2rem; padding: 0.75rem; }
       .legend { bottom: 10px; right: 10px; padding: 8px; font-size: 11px; }
       .legend-bar { width: 80px; }
+      .toggle-container { top: 8px; right: 8px; }
+      .toggle-btn { padding: 3px 8px; font-size: 10px; }
     }
   </style>
 </head>
 <body>
   {% if map_title %}<h1>{{ map_title }}</h1>{% endif %}
+  {% if has_book_data %}
+  <div class="toggle-container">
+    <div class="toggle">
+      <button class="toggle-btn{% if default_view == 'authors' %} active{% endif %}" data-mode="authors" title="Count unique authors per country">Authors</button>
+      <button class="toggle-btn{% if default_view == 'books' %} active{% endif %}" data-mode="books" title="Count total books per country">Books</button>
+    </div>
+  </div>
+  {% endif %}
   <div id="map-container"></div>
   <div class="tooltip" id="tooltip">
     <div class="tooltip-country"></div>
@@ -142,10 +183,15 @@
   <script>{{ topojson_js | safe }}</script>
   <script>
     const topoData = {{ topojson_data | safe }};
-    const counts = {{ counts | safe }};
-    const countLabel = "{{ count_label }}";
-    const colorScale = {{ color_scale | safe }};
+    const authorCounts = {{ author_counts | safe }};
+    const bookCounts = {{ book_counts | safe }};
+    const hasBookData = {{ has_book_data | tojson }};
+    const colorScaleName = {{ color_scale | safe }};
     const authorsByCountry = {{ authors_by_country | tojson }};
+
+    let currentMode = "{{ default_view }}";
+    let currentCounts = currentMode === "books" ? bookCounts : authorCounts;
+    let currentLabel = currentMode === "books" ? "book" : "author";
 
     const countryNameMap = {
       "United States": "United States of America",
@@ -167,13 +213,17 @@
       topoToDisplayName[topo] = display;
     });
 
-    const dataByTopoName = {};
-    Object.entries(counts).forEach(([name, count]) => {
-      const topoName = countryNameMap[name] || name;
-      dataByTopoName[topoName] = count;
-    });
+    function getDataByTopoName(counts) {
+      const data = {};
+      Object.entries(counts).forEach(([name, count]) => {
+        const topoName = countryNameMap[name] || name;
+        data[topoName] = count;
+      });
+      return data;
+    }
 
-    const maxCount = Math.max(...Object.values(counts), 1);
+    let dataByTopoName = getDataByTopoName(currentCounts);
+    let maxCount = Math.max(...Object.values(currentCounts), 1);
 
     const container = document.getElementById('map-container');
     const width = container.clientWidth;
@@ -191,9 +241,9 @@
 
     const path = d3.geoPath().projection(projection);
 
-    const color = d3.scaleSequential()
+    let color = d3.scaleSequential()
       .domain([0, maxCount])
-      .interpolator(d3[colorScale] || d3.interpolateReds);
+      .interpolator(d3[colorScaleName] || d3.interpolateReds);
 
     svg.selectAll('.country')
       .data(countries.features)
@@ -223,7 +273,7 @@
       const count = dataByTopoName[topoName] || 0;
 
       tooltipCountry.textContent = displayName;
-      tooltipCount.textContent = count > 0 ? `${count} ${countLabel}${count !== 1 ? 's' : ''}` : `No ${countLabel}s`;
+      tooltipCount.textContent = count > 0 ? `${count} ${currentLabel}${count !== 1 ? 's' : ''}` : `No ${currentLabel}s`;
 
       const authors = authorsByCountry[displayName] || [];
       tooltipAuthors.innerHTML = authors.map(a => `<div>${a}</div>`).join('');
@@ -249,27 +299,67 @@
       tooltip.classList.remove('visible');
     }
 
+    function switchMode(mode) {
+      if (mode === currentMode) return;
+      currentMode = mode;
+      currentCounts = mode === "books" ? bookCounts : authorCounts;
+      currentLabel = mode === "books" ? "book" : "author";
+      dataByTopoName = getDataByTopoName(currentCounts);
+      maxCount = Math.max(...Object.values(currentCounts), 1);
+
+      color = d3.scaleSequential()
+        .domain([0, maxCount])
+        .interpolator(d3[colorScaleName] || d3.interpolateReds);
+
+      svg.selectAll('.country')
+        .transition()
+        .duration(300)
+        .attr('fill', d => {
+          const name = d.properties.name;
+          const count = dataByTopoName[name] || 0;
+          return count > 0 ? color(count) : '#e0e0e0';
+        });
+
+      document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+      });
+
+      {% if show_legend %}
+      updateLegend();
+      {% endif %}
+    }
+
+    {% if has_book_data %}
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchMode(btn.dataset.mode));
+    });
+    {% endif %}
+
     {% if show_legend %}
     const legendTitle = document.getElementById('legend-title');
-    legendTitle.textContent = countLabel.charAt(0).toUpperCase() + countLabel.slice(1) + 's';
     const legendBar = document.getElementById('legend-bar');
     const legendMax = document.getElementById('legend-max');
-    legendMax.textContent = maxCount;
+    {% if top_n %}const legendList = document.getElementById('legend-list');{% endif %}
 
-    const gradientStops = [];
-    for (let i = 0; i <= 10; i++) {
-      gradientStops.push(color(maxCount * i / 10));
+    function updateLegend() {
+      legendTitle.textContent = currentLabel.charAt(0).toUpperCase() + currentLabel.slice(1) + 's';
+      legendMax.textContent = maxCount;
+
+      const gradientStops = [];
+      for (let i = 0; i <= 10; i++) {
+        gradientStops.push(color(maxCount * i / 10));
+      }
+      legendBar.style.background = `linear-gradient(to right, ${gradientStops.join(', ')})`;
+      {% if top_n %}
+      const topN = Object.entries(currentCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, {{ top_n }});
+      legendList.innerHTML = topN.map(([country, count]) =>
+        `<div class="legend-item"><span>${country}</span><span class="legend-item-count">${count}</span></div>`
+      ).join('');
+      {% endif %}
     }
-    legendBar.style.background = `linear-gradient(to right, ${gradientStops.join(', ')})`;
-    {% if top_n %}
-    const topN = Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, {{ top_n }});
-    const legendList = document.getElementById('legend-list');
-    legendList.innerHTML = topN.map(([country, count]) =>
-      `<div class="legend-item"><span>${country}</span><span class="legend-item-count">${count}</span></div>`
-    ).join('');
-    {% endif %}
+    updateLegend();
     {% endif %}
 
     window.addEventListener('resize', () => {
