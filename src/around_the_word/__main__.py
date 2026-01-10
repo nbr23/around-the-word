@@ -60,7 +60,7 @@ def main():
     parser.add_argument(
         "--map-title",
         default=None,
-        help="Title displayed on the map (default: 'Authors by Nationality' or 'Books by Author Nationality')",
+        help="Title displayed on the map (default: 'Authors by Nationality')",
     )
     parser.add_argument(
         "--title",
