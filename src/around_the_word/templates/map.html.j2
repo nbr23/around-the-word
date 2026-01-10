@@ -172,7 +172,7 @@
   <div class="legend">
     <div class="legend-title" id="legend-title"></div>
     <div class="legend-scale">
-      <span>0</span>
+      <span>1</span>
       <div class="legend-bar" id="legend-bar"></div>
       <span id="legend-max"></span>
     </div>
@@ -241,8 +241,8 @@
 
     const path = d3.geoPath().projection(projection);
 
-    let color = d3.scaleSequential()
-      .domain([0, maxCount])
+    let color = d3.scaleSequentialLog()
+      .domain([1, maxCount])
       .interpolator(d3[colorScaleName] || d3.interpolateReds);
 
     svg.selectAll('.country')
@@ -307,8 +307,8 @@
       dataByTopoName = getDataByTopoName(currentCounts);
       maxCount = Math.max(...Object.values(currentCounts), 1);
 
-      color = d3.scaleSequential()
-        .domain([0, maxCount])
+      color = d3.scaleSequentialLog()
+        .domain([1, maxCount])
         .interpolator(d3[colorScaleName] || d3.interpolateReds);
 
       svg.selectAll('.country')
@@ -347,7 +347,7 @@
 
       const gradientStops = [];
       for (let i = 0; i <= 10; i++) {
-        gradientStops.push(color(maxCount * i / 10));
+        gradientStops.push(color(Math.max(1, Math.pow(maxCount, i / 10))));
       }
       legendBar.style.background = `linear-gradient(to right, ${gradientStops.join(', ')})`;
       {% if top_n %}
