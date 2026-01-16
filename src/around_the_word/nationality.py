@@ -172,6 +172,6 @@ def lookup_authors(
         fetched_count += 1
 
     if cache_path:
-        save_cache(cache_path, cache)
+        save_cache(cache_path, {k: cache[k] for k in cache if k in authors})
 
     return results
