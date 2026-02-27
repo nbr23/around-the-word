@@ -136,8 +136,10 @@ def load_cache(path: Path) -> dict[str, Optional[str]]:
 
 
 def save_cache(path: Path, data: dict[str, Optional[str]]) -> None:
+    existing = load_cache(path)
+    existing.update(data)
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+        json.dump(existing, f, indent=2, ensure_ascii=False)
 
 
 def lookup_authors(
