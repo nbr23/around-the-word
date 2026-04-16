@@ -193,6 +193,58 @@
     let currentCounts = currentMode === "books" ? bookCounts : authorCounts;
     let currentLabel = currentMode === "books" ? "book" : "author";
 
+    const params = new URLSearchParams(window.location.search);
+    let filterCountry = params.get('country');
+    let filterAuthor = params.get('author');
+
+    function updateURL() {
+      const p = new URLSearchParams();
+      if (filterCountry) p.set('country', filterCountry);
+      if (filterAuthor) p.set('author', filterAuthor);
+      const qs = p.toString();
+      history.replaceState(null, '', qs ? '?' + qs : window.location.pathname);
+    }
+
+    function getFilteredCounts() {
+      if (!filterCountry && !filterAuthor) return currentCounts;
+      const filtered = {};
+      if (filterAuthor) {
+        Object.keys(authorsByCountry).forEach(country => {
+          if (authorsByCountry[country].some(a => a === filterAuthor) && currentCounts[country]) {
+            filtered[country] = currentCounts[country];
+          }
+        });
+      } else if (filterCountry) {
+        if (currentCounts[filterCountry]) {
+          filtered[filterCountry] = currentCounts[filterCountry];
+        }
+      }
+      return filtered;
+    }
+
+    function applyFilters() {
+      const filtered = getFilteredCounts();
+      dataByTopoName = getDataByTopoName(filtered);
+      maxCount = Math.max(...Object.values(filtered), 1);
+
+      color = d3.scaleSequentialLog()
+        .domain([1, maxCount])
+        .interpolator(d3[colorScaleName] || d3.interpolateReds);
+
+      svg.selectAll('.country')
+        .transition()
+        .duration(300)
+        .attr('fill', d => {
+          const name = d.properties.name;
+          const count = dataByTopoName[name] || 0;
+          return count > 0 ? color(count) : '#e0e0e0';
+        });
+
+      {% if show_legend %}
+      updateLegend();
+      {% endif %}
+    }
+
     const countryNameMap = {
       "United States": "United States of America",
       "Czech Republic": "Czechia",
@@ -245,6 +297,8 @@
       .domain([1, maxCount])
       .interpolator(d3[colorScaleName] || d3.interpolateReds);
 
+    let clickTimer = null;
+
     svg.selectAll('.country')
       .data(countries.features)
       .enter()
@@ -260,7 +314,40 @@
       .on('mousemove', moveTooltip)
       .on('mouseout', hideTooltip)
       .on('touchstart', showTooltip, { passive: true })
-      .on('touchend', hideTooltip, { passive: true });
+      .on('touchend', hideTooltip, { passive: true })
+      .on('click', function(event, d) {
+        if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; }
+        clickTimer = setTimeout(() => {
+          filterCountry = null;
+          filterAuthor = null;
+          updateURL();
+          applyFilters();
+          parent.postMessage({ type: 'clear' }, '*');
+          clickTimer = null;
+        }, 250);
+      })
+      .on('dblclick', function(event, d) {
+        if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; }
+        const topoName = d.properties.name;
+        const displayName = topoToDisplayName[topoName] || topoName;
+        filterCountry = displayName;
+        filterAuthor = null;
+        updateURL();
+        applyFilters();
+        parent.postMessage({ type: 'filterCountry', country: displayName }, '*');
+      });
+
+    svg.on('click', function(event) {
+      if (event.target.tagName === 'svg' || event.target === svg.node()) {
+        if (filterCountry || filterAuthor) {
+          filterCountry = null;
+          filterAuthor = null;
+          updateURL();
+          applyFilters();
+          parent.postMessage({ type: 'clear' }, '*');
+        }
+      }
+    });
 
     const tooltip = document.getElementById('tooltip');
     const tooltipCountry = tooltip.querySelector('.tooltip-country');
@@ -304,29 +391,12 @@
       currentMode = mode;
       currentCounts = mode === "books" ? bookCounts : authorCounts;
       currentLabel = mode === "books" ? "book" : "author";
-      dataByTopoName = getDataByTopoName(currentCounts);
-      maxCount = Math.max(...Object.values(currentCounts), 1);
-
-      color = d3.scaleSequentialLog()
-        .domain([1, maxCount])
-        .interpolator(d3[colorScaleName] || d3.interpolateReds);
-
-      svg.selectAll('.country')
-        .transition()
-        .duration(300)
-        .attr('fill', d => {
-          const name = d.properties.name;
-          const count = dataByTopoName[name] || 0;
-          return count > 0 ? color(count) : '#e0e0e0';
-        });
 
       document.querySelectorAll('.toggle-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.mode === mode);
       });
 
-      {% if show_legend %}
-      updateLegend();
-      {% endif %}
+      applyFilters();
     }
 
     {% if has_book_data %}
@@ -351,7 +421,7 @@
       }
       legendBar.style.background = `linear-gradient(to right, ${gradientStops.join(', ')})`;
       {% if top_n %}
-      const topN = Object.entries(currentCounts)
+      const topN = Object.entries(getFilteredCounts())
         .sort((a, b) => b[1] - a[1])
         .slice(0, {{ top_n }});
       legendList.innerHTML = topN.map(([country, count]) =>
@@ -361,6 +431,37 @@
     }
     updateLegend();
     {% endif %}
+
+    if (filterCountry || filterAuthor) applyFilters();
+
+    window.addEventListener('message', function(e) {
+      var data = e.data;
+      if (!data || !data.type) return;
+      if (data.type === 'filterAuthor' && data.author) {
+        filterCountry = null;
+        filterAuthor = data.author;
+      } else if (data.type === 'filterCountry' && data.country) {
+        filterAuthor = null;
+        filterCountry = data.country;
+      } else if (data.type === 'clear') {
+        filterCountry = null;
+        filterAuthor = null;
+      } else {
+        return;
+      }
+      updateURL();
+      applyFilters();
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && (filterCountry || filterAuthor)) {
+        filterCountry = null;
+        filterAuthor = null;
+        updateURL();
+        applyFilters();
+        parent.postMessage({ type: 'clear' }, '*');
+      }
+    });
 
     window.addEventListener('resize', () => {
       const newWidth = container.clientWidth;
