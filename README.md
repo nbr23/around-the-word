@@ -55,5 +55,6 @@ echo "King, Rowling, Pratchett" | uvx around-the-word -c cache.json
 | `--legend` | Show legend with color scale |
 | `--top N` | Show top N countries in legend (implies `--legend`) |
 | `--include-authors` | Include author names in map hover tooltips |
+| `--default-view` | Default toggle view on map load: `authors` or `books` (default: `authors`) |
 
 When an input file is provided, the map includes a toggle to switch between counting unique authors or total books per country.
