@@ -88,6 +88,12 @@ def main():
         action="store_true",
         help="Include author names in map hover tooltips",
     )
+    parser.add_argument(
+        "--default-view",
+        choices=["authors", "books"],
+        default="authors",
+        help="Default toggle view on map load (default: authors)",
+    )
 
     args = parser.parse_args()
 
@@ -161,6 +167,7 @@ def main():
             author_countries,
             args.output,
             book_author_pairs=book_author_pairs,
+            default_view=args.default_view,
             map_title=args.map_title,
             page_title=args.title,
             colorscale=args.colorscale,
