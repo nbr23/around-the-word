@@ -74,5 +74,3 @@ The cache file (`-c/--cache`) maps each author to a list of country names (or `n
   "Unknown Author": null
 }
 ```
-
-Legacy single-string values (`"Author": "Country"`) are auto-upgraded to single-element lists on load and rewritten in the new shape on the next save. Edit the file directly to correct or add countries — entries with multiple countries contribute to each one on the map.
