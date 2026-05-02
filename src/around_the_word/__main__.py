@@ -94,6 +94,11 @@ def main():
         default="authors",
         help="Default toggle view on map load (default: authors)",
     )
+    parser.add_argument(
+        "--multi-nationality",
+        action="store_true",
+        help="Include all Wikidata citizenships in addition to birth country (default: single)",
+    )
 
     args = parser.parse_args()
 
@@ -159,7 +164,12 @@ def main():
             sys.exit(1)
 
         print("Looking up author nationalities...")
-        author_countries = lookup_authors(authors, delay=args.delay, cache_path=args.cache)
+        author_countries = lookup_authors(
+            authors,
+            delay=args.delay,
+            cache_path=args.cache,
+            multi=args.multi_nationality,
+        )
 
     if sum(1 for c in author_countries.values() if c) > 0:
         print(f"\nGenerating map: {args.output}")

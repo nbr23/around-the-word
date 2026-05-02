@@ -32,6 +32,9 @@ uvx around-the-word --cache-only -c cache.json -o map.html
 # With legend and top 10 countries
 uvx around-the-word --cache-only -c cache.json --top 10 -o map.html
 
+# Include all Wikidata citizenships (dual nationals appear in every country)
+uvx around-the-word -i export.csv -f goodreads --multi-nationality -c cache.json -o map.html
+
 # From stdin (one author per line, or comma-separated)
 echo "Stephen King" | uvx around-the-word -c cache.json -o map.html
 cat authors.txt | uvx around-the-word -c cache.json -o map.html
@@ -56,5 +59,20 @@ echo "King, Rowling, Pratchett" | uvx around-the-word -c cache.json
 | `--top N` | Show top N countries in legend (implies `--legend`) |
 | `--include-authors` | Include author names in map hover tooltips |
 | `--default-view` | Default toggle view on map load: `authors` or `books` (default: `authors`) |
+| `--multi-nationality` | Include every Wikidata citizenship plus birth country (default: birth country only) |
 
 When an input file is provided, the map includes a toggle to switch between counting unique authors or total books per country.
+
+## Cache format
+
+The cache file (`-c/--cache`) maps each author to a list of country names (or `null` when no nationality could be resolved):
+
+```json
+{
+  "Albert Camus": ["Algeria", "France"],
+  "Adrian Tchaikovsky": ["United Kingdom"],
+  "Unknown Author": null
+}
+```
+
+Legacy single-string values (`"Author": "Country"`) are auto-upgraded to single-element lists on load and rewritten in the new shape on the next save. Edit the file directly to correct or add countries — entries with multiple countries contribute to each one on the map.

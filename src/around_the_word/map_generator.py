@@ -73,7 +73,7 @@ def _load_asset(name: str) -> str:
 
 
 def generate_map(
-    author_countries: dict[str, str | None],
+    author_countries: dict[str, list[str] | None],
     output_path: str | Path = "author_map.html",
     book_author_pairs: list[tuple[str, str]] | None = None,
     default_view: str = "authors",
@@ -85,9 +85,10 @@ def generate_map(
     include_authors: bool = False,
 ) -> Path:
     authors_by_country: dict[str, list[str]] = defaultdict(list)
-    for author, country in author_countries.items():
-        if country:
-            authors_by_country[country].append(author)
+    for author, countries in author_countries.items():
+        for country in countries or []:
+            if author not in authors_by_country[country]:
+                authors_by_country[country].append(author)
 
     if not authors_by_country:
         raise ValueError("No valid country data to map")
@@ -99,8 +100,7 @@ def generate_map(
     if book_author_pairs:
         book_counts = defaultdict(int)
         for author, _ in book_author_pairs:
-            country = author_countries.get(author)
-            if country:
+            for country in author_countries.get(author) or []:
                 book_counts[country] += 1
         book_counts = dict(book_counts)
 
