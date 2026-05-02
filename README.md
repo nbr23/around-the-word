@@ -38,7 +38,9 @@ uvx around-the-word -i export.csv -f goodreads --multi-nationality -c cache.json
 # From stdin (one author per line, or comma-separated)
 echo "Stephen King" | uvx around-the-word -c cache.json -o map.html
 cat authors.txt | uvx around-the-word -c cache.json -o map.html
-echo "King, Rowling, Pratchett" | uvx around-the-word -c cache.json
+echo "Stephen King, Albert Camus, Terry Pratchett" | uvx around-the-word -c cache.json
+# With multiple nationalities
+echo "Stephen King, Albert Camus, Terry Pratchett" | uvx around-the-word --multi-nationality -c cache.json
 ```
 
 ## Options
