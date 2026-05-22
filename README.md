@@ -8,17 +8,31 @@ Visualize author birthplaces from your "books read" list as an interactive world
 uv pip install around-the-word
 ```
 
-## Exporting from Goodreads
+## Goodreads input options
+
+Two ways to pull books from Goodreads:
+
+**CSV export** (full data, includes additional authors):
 
 1. Go to [goodreads.com/review/import](https://www.goodreads.com/review/import)
 2. Click "Export Library"
 3. Wait for the export to complete, then download the CSV file
+
+**Live RSS feed** (no export step, always current; primary author only):
+
+Pass your Goodreads user identifier with `--goodreads-user`. You can find it in the URL of your profile page (e.g. `https://www.goodreads.com/user/show/12345678-username` → `12345678-username`). The feed is paginated and fetched in full automatically.
 
 ## Usage
 
 ```bash
 # From Goodreads CSV export
 uvx around-the-word -i goodreads_library_export.csv -f goodreads -o map.html
+
+# From Goodreads live RSS feed (no export needed)
+uvx around-the-word -f goodreads-rss --goodreads-user 12345678-username -o map.html
+
+# From a different shelf (default is "read")
+uvx around-the-word -f goodreads-rss --goodreads-user 12345678-username --goodreads-shelf to-read -o map.html
 
 # From markdown list (- Title - Author format)
 uvx around-the-word -i books.md -f markdown -o map.html
@@ -49,7 +63,9 @@ echo "Stephen King, Albert Camus, Terry Pratchett" | uvx around-the-word --multi
 |------|-------------|
 | `-v, --version` | Show version and exit |
 | `-i, --input` | Input file path (or pipe author names to stdin) |
-| `-f, --format` | Input format: `goodreads` or `markdown` |
+| `-f, --format` | Input format: `goodreads`, `markdown`, or `goodreads-rss` |
+| `--goodreads-user` | Goodreads user identifier (required with `-f goodreads-rss`) |
+| `--goodreads-shelf` | Shelf to fetch with `-f goodreads-rss` (default: `read`) |
 | `-o, --output` | Output HTML file (default: `author_map.html`) |
 | `-d, --delay` | Delay between API requests in seconds (default: 0.5) |
 | `-c, --cache` | JSON cache file for author birthplaces |

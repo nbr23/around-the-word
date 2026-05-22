@@ -4,10 +4,38 @@ from importlib.metadata import version
 from pathlib import Path
 
 from .map_generator import generate_map
-from .parsers import parse_goodreads_csv, parse_markdown_list, parse_stdin
+from .parsers import (
+    parse_goodreads_csv,
+    parse_goodreads_rss,
+    parse_markdown_list,
+    parse_stdin,
+)
 from .nationality import lookup_authors, load_cache
 
 __version__ = version("around-the-word")
+
+
+def _parse_input(args):
+    if args.format == "goodreads-rss":
+        if not args.goodreads_user:
+            print("Error: -f goodreads-rss requires --goodreads-user", file=sys.stderr)
+            sys.exit(1)
+        if args.input:
+            print("Error: -i/--input is not used with -f goodreads-rss (use --goodreads-user)", file=sys.stderr)
+            sys.exit(1)
+        print(f"Fetching Goodreads RSS for user {args.goodreads_user} (shelf: {args.goodreads_shelf})...")
+        return parse_goodreads_rss(args.goodreads_user, args.goodreads_shelf)
+
+    if not args.input:
+        print("Error: -i/--input is required for this format", file=sys.stderr)
+        sys.exit(1)
+    if not args.input.exists():
+        print(f"Error: File not found: {args.input}", file=sys.stderr)
+        sys.exit(1)
+    print(f"Parsing {args.input}...")
+    if args.format == "goodreads":
+        return parse_goodreads_csv(args.input)
+    return parse_markdown_list(args.input)
 
 
 def main():
@@ -29,8 +57,17 @@ def main():
     parser.add_argument(
         "-f",
         "--format",
-        choices=["goodreads", "markdown"],
-        help="Input format: goodreads (CSV export) or markdown (- Title - Authors)",
+        choices=["goodreads", "markdown", "goodreads-rss"],
+        help="Input format: goodreads (CSV export), markdown (- Title - Authors), or goodreads-rss (live RSS feed; primary author only, no additional authors)",
+    )
+    parser.add_argument(
+        "--goodreads-user",
+        help="Goodreads user identifier for -f goodreads-rss (e.g. 12345678-username)",
+    )
+    parser.add_argument(
+        "--goodreads-shelf",
+        default="read",
+        help="Goodreads shelf to fetch with -f goodreads-rss (default: read)",
     )
     parser.add_argument(
         "-o",
@@ -123,35 +160,21 @@ def main():
         author_countries = load_cache(args.cache)
         print(f"Loaded {len(author_countries)} authors from cache")
 
-        if args.input:
+        if args.input or args.format == "goodreads-rss":
             if not args.format:
                 print("Error: -f/--format is required with -i/--input", file=sys.stderr)
                 sys.exit(1)
-            if not args.input.exists():
-                print(f"Error: File not found: {args.input}", file=sys.stderr)
-                sys.exit(1)
-            print(f"Parsing {args.input} for book counts...")
-            if args.format == "goodreads":
-                book_author_pairs = parse_goodreads_csv(args.input)
-            else:
-                book_author_pairs = parse_markdown_list(args.input)
+            book_author_pairs = _parse_input(args)
             print(f"Found {len(book_author_pairs)} book-author entries")
     else:
-        if args.input:
+        if args.input or args.format == "goodreads-rss":
             if not args.format:
                 print("Error: -f/--format is required with -i/--input", file=sys.stderr)
                 sys.exit(1)
-            if not args.input.exists():
-                print(f"Error: File not found: {args.input}", file=sys.stderr)
-                sys.exit(1)
-            print(f"Parsing {args.input}...")
-            if args.format == "goodreads":
-                book_author_pairs = parse_goodreads_csv(args.input)
-            else:
-                book_author_pairs = parse_markdown_list(args.input)
+            book_author_pairs = _parse_input(args)
         else:
             if sys.stdin.isatty():
-                print("Error: No input. Provide -i/--input or pipe author names to stdin", file=sys.stderr)
+                print("Error: No input. Provide -i/--input, -f goodreads-rss, or pipe author names to stdin", file=sys.stderr)
                 sys.exit(1)
             print("Reading authors from stdin...")
             book_author_pairs = parse_stdin()

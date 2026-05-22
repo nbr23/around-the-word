@@ -1,6 +1,9 @@
 import csv
 import sys
 from pathlib import Path
+from xml.etree import ElementTree as ET
+
+import requests
 
 
 def parse_goodreads_csv(filepath: str | Path) -> list[tuple[str, str]]:
@@ -49,6 +52,40 @@ def parse_markdown_list(filepath: str | Path) -> list[tuple[str, str]]:
                 author = author.strip()
                 if author:
                     book_author_pairs.append((author, title))
+
+    return book_author_pairs
+
+
+def parse_goodreads_rss(user: str, shelf: str = "read") -> list[tuple[str, str]]:
+    book_author_pairs = []
+    max_pages = 50
+    base_url = f"https://www.goodreads.com/review/list_rss/{user}"
+
+    for page in range(1, max_pages + 1):
+        resp = requests.get(
+            base_url,
+            params={"shelf": shelf, "page": page},
+            headers={"User-Agent": "around-the-word"},
+            timeout=30,
+        )
+        resp.raise_for_status()
+
+        root = ET.fromstring(resp.content)
+        items = root.findall(".//item")
+        print(f"Fetched page {page} ({len(items)} items)")
+
+        if not items:
+            break
+
+        for item in items:
+            author_el = item.find("author_name")
+            title_el = item.find("title")
+            author = (author_el.text or "").strip() if author_el is not None else ""
+            title = (title_el.text or "").strip() if title_el is not None else ""
+            if author:
+                book_author_pairs.append((author, title))
+    else:
+        print(f"Warning: hit max_pages={max_pages} cap; results may be truncated", file=sys.stderr)
 
     return book_author_pairs
 
