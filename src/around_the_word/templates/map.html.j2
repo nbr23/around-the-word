@@ -189,6 +189,13 @@
     const colorScaleName = {{ color_scale | safe }};
     const authorsByCountry = {{ authors_by_country | tojson }};
 
+    const authorToCountries = {};
+    Object.entries(authorsByCountry).forEach(([country, authors]) => {
+      authors.forEach(author => {
+        (authorToCountries[author] = authorToCountries[author] || []).push(country);
+      });
+    });
+
     let currentMode = "{{ default_view }}";
     let currentCounts = currentMode === "books" ? bookCounts : authorCounts;
     let currentLabel = currentMode === "books" ? "book" : "author";
@@ -196,6 +203,7 @@
     const params = new URLSearchParams(window.location.search);
     let filterCountry = params.get('country');
     let filterAuthor = params.get('author');
+    let filterAuthorList = null;
 
     function updateURL() {
       const p = new URLSearchParams();
@@ -206,6 +214,16 @@
     }
 
     function getFilteredCounts() {
+      if (filterAuthorList) {
+        const filtered = {};
+        const authors = currentMode === "books" ? filterAuthorList : [...new Set(filterAuthorList)];
+        authors.forEach(author => {
+          (authorToCountries[author] || []).forEach(country => {
+            filtered[country] = (filtered[country] || 0) + 1;
+          });
+        });
+        return filtered;
+      }
       if (!filterCountry && !filterAuthor) return currentCounts;
       const filtered = {};
       if (filterAuthor) {
@@ -320,6 +338,7 @@
         clickTimer = setTimeout(() => {
           filterCountry = null;
           filterAuthor = null;
+          filterAuthorList = null;
           updateURL();
           applyFilters();
           parent.postMessage({ type: 'clear' }, '*');
@@ -339,9 +358,10 @@
 
     svg.on('click', function(event) {
       if (event.target.tagName === 'svg' || event.target === svg.node()) {
-        if (filterCountry || filterAuthor) {
+        if (filterCountry || filterAuthor || filterAuthorList) {
           filterCountry = null;
           filterAuthor = null;
+          filterAuthorList = null;
           updateURL();
           applyFilters();
           parent.postMessage({ type: 'clear' }, '*');
@@ -362,7 +382,11 @@
       tooltipCountry.textContent = displayName;
       tooltipCount.textContent = count > 0 ? `${count} ${currentLabel}${count !== 1 ? 's' : ''}` : `No ${currentLabel}s`;
 
-      const authors = authorsByCountry[displayName] || [];
+      let authors = authorsByCountry[displayName] || [];
+      if (filterAuthorList) {
+        const yearAuthors = new Set(filterAuthorList);
+        authors = authors.filter(a => yearAuthors.has(a));
+      }
       tooltipAuthors.innerHTML = authors.map(a => `<div>${a}</div>`).join('');
 
       tooltip.classList.add('visible');
@@ -437,15 +461,24 @@
     window.addEventListener('message', function(e) {
       var data = e.data;
       if (!data || !data.type) return;
-      if (data.type === 'filterAuthor' && data.author) {
+      if (data.type === 'filterAuthors' && data.authors) {
+        filterCountry = null;
+        filterAuthor = null;
+        filterAuthorList = data.authors;
+        applyFilters();
+        return;
+      } else if (data.type === 'filterAuthor' && data.author) {
         filterCountry = null;
         filterAuthor = data.author;
+        filterAuthorList = null;
       } else if (data.type === 'filterCountry' && data.country) {
         filterAuthor = null;
         filterCountry = data.country;
+        filterAuthorList = null;
       } else if (data.type === 'clear') {
         filterCountry = null;
         filterAuthor = null;
+        filterAuthorList = null;
       } else {
         return;
       }
@@ -454,9 +487,10 @@
     });
 
     document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape' && (filterCountry || filterAuthor)) {
+      if (e.key === 'Escape' && (filterCountry || filterAuthor || filterAuthorList)) {
         filterCountry = null;
         filterAuthor = null;
+        filterAuthorList = null;
         updateURL();
         applyFilters();
         parent.postMessage({ type: 'clear' }, '*');
