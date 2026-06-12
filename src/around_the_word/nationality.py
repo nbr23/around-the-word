@@ -10,31 +10,21 @@ from .constants import NATIONALITY_TO_COUNTRY
 
 
 def get_nationalities_wikidata(author_name: str, multi: bool = False) -> list[str]:
-    if multi:
-        sparql_query = """
-        SELECT ?birthCountryLabel ?nationalityLabel WHERE {
-          ?person wdt:P31 wd:Q5 .
-          ?person rdfs:label "%s"@en .
-          ?person wdt:P106 ?occupation .
-          ?occupation wdt:P279* wd:Q36180 .
-          OPTIONAL { ?person wdt:P19/wdt:P17 ?birthCountry . }
-          OPTIONAL { ?person wdt:P27 ?nationality . }
-          SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-        }
-        """ % author_name.replace('"', '\\"')
-    else:
-        sparql_query = """
-        SELECT ?birthCountryLabel ?nationalityLabel WHERE {
-          ?person wdt:P31 wd:Q5 .
-          ?person rdfs:label "%s"@en .
-          ?person wdt:P106 ?occupation .
-          ?occupation wdt:P279* wd:Q36180 .
-          OPTIONAL { ?person wdt:P19/wdt:P17 ?birthCountry . }
-          OPTIONAL { ?person wdt:P27 ?nationality . }
-          SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-        }
-        LIMIT 1
-        """ % author_name.replace('"', '\\"')
+    escaped_name = author_name.replace('"', '\\"')
+    sparql_query = """
+    SELECT DISTINCT ?person ?sitelinks ?birthCountryLabel ?nationalityLabel WHERE {
+      ?person wdt:P31 wd:Q5 .
+      { ?person rdfs:label "%s"@en . } UNION { ?person skos:altLabel "%s"@en . }
+      ?person wdt:P106 ?occupation .
+      ?occupation wdt:P279* wd:Q36180 .
+      ?person wikibase:sitelinks ?sitelinks .
+      OPTIONAL { ?person wdt:P19/wdt:P17 ?birthCountry . }
+      OPTIONAL { ?person wdt:P27 ?nationality . }
+      SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+    }
+    ORDER BY DESC(?sitelinks) ?person
+    LIMIT 50
+    """ % (escaped_name, escaped_name)
 
     url = "https://query.wikidata.org/sparql"
     headers = {
@@ -53,15 +43,18 @@ def get_nationalities_wikidata(author_name: str, multi: bool = False) -> list[st
         if not results:
             return []
 
+        top_person = results[0]["person"]["value"]
+        rows = [r for r in results if r["person"]["value"] == top_person]
+
         if not multi:
-            if "birthCountryLabel" in results[0]:
-                return [results[0]["birthCountryLabel"]["value"]]
-            if "nationalityLabel" in results[0]:
-                return [results[0]["nationalityLabel"]["value"]]
+            for key in ("birthCountryLabel", "nationalityLabel"):
+                for row in rows:
+                    if key in row:
+                        return [row[key]["value"]]
             return []
 
         found: list[str] = []
-        for row in results:
+        for row in rows:
             for key in ("birthCountryLabel", "nationalityLabel"):
                 if key in row:
                     value = row[key]["value"]

@@ -115,60 +115,83 @@ def test_lookup_authors_records_not_found(tmp_path, monkeypatch):
     assert cache == {"Jane Doe": None}
 
 
-def test_get_nationalities_wikidata_single_prefers_birth_country(monkeypatch):
-    payload = {
-        "results": {
-            "bindings": [
-                {
-                    "birthCountryLabel": {"value": "France"},
-                    "nationalityLabel": {"value": "Belgium"},
-                }
-            ]
-        }
+def wikidata_row(person, sitelinks, birth_country=None, nationality=None):
+    row = {
+        "person": {"value": f"http://www.wikidata.org/entity/{person}"},
+        "sitelinks": {"value": str(sitelinks)},
     }
-    monkeypatch.setattr(
-        nationality.requests,
-        "get",
-        lambda url, params=None, headers=None, timeout=None: FakeResponse(payload),
+    if birth_country:
+        row["birthCountryLabel"] = {"value": birth_country}
+    if nationality:
+        row["nationalityLabel"] = {"value": nationality}
+    return row
+
+
+def stub_wikidata(monkeypatch, bindings, captured=None):
+    def fake_get(url, params=None, headers=None, timeout=None):
+        if captured is not None:
+            captured.append(params["query"])
+        return FakeResponse({"results": {"bindings": bindings}})
+
+    monkeypatch.setattr(nationality.requests, "get", fake_get)
+
+
+def test_get_nationalities_wikidata_single_prefers_birth_country(monkeypatch):
+    stub_wikidata(
+        monkeypatch,
+        [wikidata_row("Q1", 50, birth_country="France", nationality="Belgium")],
+    )
+
+    assert get_nationalities_wikidata("Jane Doe") == ["France"]
+
+
+def test_get_nationalities_wikidata_single_finds_birth_country_in_later_row(monkeypatch):
+    stub_wikidata(
+        monkeypatch,
+        [
+            wikidata_row("Q1", 50, nationality="Belgium"),
+            wikidata_row("Q1", 50, birth_country="France"),
+        ],
     )
 
     assert get_nationalities_wikidata("Jane Doe") == ["France"]
 
 
 def test_get_nationalities_wikidata_multi_deduplicates(monkeypatch):
-    payload = {
-        "results": {
-            "bindings": [
-                {
-                    "birthCountryLabel": {"value": "France"},
-                    "nationalityLabel": {"value": "Belgium"},
-                },
-                {
-                    "birthCountryLabel": {"value": "France"},
-                    "nationalityLabel": {"value": "France"},
-                },
-            ]
-        }
-    }
-    monkeypatch.setattr(
-        nationality.requests,
-        "get",
-        lambda url, params=None, headers=None, timeout=None: FakeResponse(payload),
+    stub_wikidata(
+        monkeypatch,
+        [
+            wikidata_row("Q1", 50, birth_country="France", nationality="Belgium"),
+            wikidata_row("Q1", 50, birth_country="France", nationality="France"),
+        ],
     )
 
     assert get_nationalities_wikidata("Jane Doe", multi=True) == ["France", "Belgium"]
 
 
-def test_get_nationalities_wikidata_no_results(monkeypatch):
-    monkeypatch.setattr(
-        nationality.requests,
-        "get",
-        lambda url, params=None, headers=None, timeout=None: FakeResponse(
-            {"results": {"bindings": []}}
-        ),
+def test_get_nationalities_wikidata_only_uses_top_ranked_person(monkeypatch):
+    stub_wikidata(
+        monkeypatch,
+        [
+            wikidata_row("Q1", 120, birth_country="France"),
+            wikidata_row("Q1", 120, nationality="Belgium"),
+            wikidata_row("Q2", 3, birth_country="Germany", nationality="Austria"),
+        ],
     )
 
+    assert get_nationalities_wikidata("Jane Doe") == ["France"]
+    assert get_nationalities_wikidata("Jane Doe", multi=True) == ["France", "Belgium"]
+
+
+def test_get_nationalities_wikidata_query_matches_alt_labels_and_ranks(monkeypatch):
+    captured = []
+    stub_wikidata(monkeypatch, [], captured)
+
     assert get_nationalities_wikidata("Jane Doe") == []
+    query = captured[0]
+    assert 'skos:altLabel "Jane Doe"@en' in query
+    assert 'rdfs:label "Jane Doe"@en' in query
+    assert "ORDER BY DESC(?sitelinks)" in query
 
 
 def test_get_nationality_wikipedia_extracts_nationality(monkeypatch):

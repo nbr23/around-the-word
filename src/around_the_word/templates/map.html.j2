@@ -18,20 +18,22 @@
       --country-empty: #e0e0e0;
       --country-stroke: #fff;
       --country-stroke-hover: #555;
+      --tooltip-border: transparent;
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #161616;
-        --text: #d0d0d0;
-        --muted: #8a8a8a;
-        --muted-strong: #c0c0c0;
-        --panel-bg: #242424;
-        --panel-border: #3a3a3a;
-        --panel-shadow: rgba(0,0,0,0.5);
+        --bg: #1d2430;
+        --text: #d8dce3;
+        --muted: #8d95a2;
+        --muted-strong: #c7cdd7;
+        --panel-bg: #283040;
+        --panel-border: #3c4454;
+        --panel-shadow: rgba(0,0,0,0.4);
         --toggle-bg: rgba(255,255,255,0.08);
-        --country-empty: #2e2e2e;
-        --country-stroke: #555;
-        --country-stroke-hover: #ccc;
+        --country-empty: #3a4252;
+        --country-stroke: #1d2430;
+        --country-stroke-hover: #d8dce3;
+        --tooltip-border: rgba(255,255,255,0.18);
       }
     }
     * {
@@ -77,6 +79,7 @@
     .tooltip {
       position: fixed;
       background: rgba(0,0,0,0.85);
+      border: 1px solid var(--tooltip-border);
       color: white;
       padding: 8px 12px;
       border-radius: 4px;
@@ -217,10 +220,10 @@
   <script>{{ topojson_js | safe }}</script>
   <script>
     const topoData = {{ topojson_data | safe }};
-    const authorCounts = {{ author_counts | safe }};
-    const bookCounts = {{ book_counts | safe }};
+    const authorCounts = {{ author_counts | tojson }};
+    const bookCounts = {{ book_counts | tojson }};
     const hasBookData = {{ has_book_data | tojson }};
-    const colorScaleName = {{ color_scale | safe }};
+    const colorScaleName = {{ color_scale | tojson }};
     const authorsByCountry = {{ authors_by_country | tojson }};
 
     const authorToCountries = {};
@@ -278,6 +281,23 @@
       return getComputedStyle(document.documentElement).getPropertyValue('--country-empty').trim() || '#e0e0e0';
     }
 
+    const lightStartScales = new Set([
+      "interpolateReds", "interpolateBlues", "interpolateGreens", "interpolateOranges",
+      "interpolatePurples", "interpolateGreys", "interpolateYlGnBu", "interpolateYlOrBr"
+    ]);
+    const darkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+
+    function getInterpolator() {
+      const base = d3[colorScaleName] || d3.interpolateReds;
+      if (darkScheme.matches && lightStartScales.has(colorScaleName)) {
+        const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#1d2430';
+        const low = d3.interpolateRgb(base(0.85), bg)(0.55);
+        const high = base(0.4);
+        return d3.interpolateLab(low, high);
+      }
+      return base;
+    }
+
     function applyFilters() {
       const filtered = getFilteredCounts();
       dataByTopoName = getDataByTopoName(filtered);
@@ -285,7 +305,7 @@
 
       color = d3.scaleSequentialLog()
         .domain([1, maxCount])
-        .interpolator(d3[colorScaleName] || d3.interpolateReds);
+        .interpolator(getInterpolator());
 
       svg.selectAll('.country')
         .transition()
@@ -353,7 +373,7 @@
 
     let color = d3.scaleSequentialLog()
       .domain([1, maxCount])
-      .interpolator(d3[colorScaleName] || d3.interpolateReds);
+      .interpolator(getInterpolator());
 
     let clickTimer = null;
 
@@ -427,7 +447,12 @@
         const yearAuthors = new Set(filterAuthorList);
         authors = authors.filter(a => yearAuthors.has(a));
       }
-      tooltipAuthors.innerHTML = authors.map(a => `<div>${a}</div>`).join('');
+      tooltipAuthors.textContent = '';
+      authors.forEach(a => {
+        const div = document.createElement('div');
+        div.textContent = a;
+        tooltipAuthors.appendChild(div);
+      });
 
       tooltip.classList.add('visible');
       moveTooltip(event);
@@ -490,9 +515,18 @@
       const topN = Object.entries(getFilteredCounts())
         .sort((a, b) => b[1] - a[1])
         .slice(0, {{ top_n }});
-      legendList.innerHTML = topN.map(([country, count]) =>
-        `<div class="legend-item"><span>${country}</span><span class="legend-item-count">${count}</span></div>`
-      ).join('');
+      legendList.textContent = '';
+      topN.forEach(([country, count]) => {
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        const name = document.createElement('span');
+        name.textContent = country;
+        const value = document.createElement('span');
+        value.className = 'legend-item-count';
+        value.textContent = count;
+        item.append(name, value);
+        legendList.appendChild(item);
+      });
       {% endif %}
     }
     updateLegend();

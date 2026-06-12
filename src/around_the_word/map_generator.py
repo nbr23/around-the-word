@@ -97,6 +97,8 @@ def generate_map(
 
     book_counts: dict[str, int] = {}
     has_book_data = bool(book_author_pairs)
+    if not has_book_data:
+        default_view = "authors"
     if book_author_pairs:
         book_counts = defaultdict(int)
         for author, _ in book_author_pairs:
@@ -119,7 +121,7 @@ def generate_map(
         book_counts=book_counts,
         has_book_data=has_book_data,
         default_view=default_view,
-        color_scale=f'"{d3_color_scale}"',
+        color_scale=d3_color_scale,
         show_legend=show_legend,
         top_n=top_n or 0,
         authors_by_country=dict(authors_by_country) if include_authors else {},

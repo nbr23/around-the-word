@@ -22,7 +22,7 @@ def test_generate_map_writes_output(tmp_path):
 
     assert result == output
     html = output.read_text()
-    assert "'France': 1" in html
+    assert '"France": 1' in html
     assert "/* d3 stub */" in html
 
 
@@ -39,7 +39,7 @@ def test_generate_map_counts_books_per_country(tmp_path):
     generate_map(authors, output, book_author_pairs=pairs)
 
     html = output.read_text()
-    assert "'France': 3" in html
+    assert '"France": 3' in html
     assert "const hasBookData = true;" in html
 
 
@@ -50,7 +50,7 @@ def test_generate_map_counts_unique_authors_per_country(tmp_path):
     generate_map({"Jane Doe": ["France", "Belgium"]}, output, book_author_pairs=pairs)
 
     html = output.read_text()
-    assert "const authorCounts = {'France': 1, 'Belgium': 1};" in html
+    assert 'const authorCounts = {"Belgium": 1, "France": 1};' in html
 
 
 def test_generate_map_include_authors(tmp_path):
@@ -87,6 +87,28 @@ def test_generate_map_titles_and_default_view(tmp_path):
     assert "<title>My Page</title>" in html
     assert "<h1>My Map</h1>" in html
     assert 'let currentMode = "books";' in html
+
+
+def test_generate_map_books_view_falls_back_without_book_data(tmp_path):
+    output = tmp_path / "map.html"
+
+    generate_map({"Jane Doe": ["France"]}, output, default_view="books")
+
+    assert 'let currentMode = "authors";' in output.read_text()
+
+
+def test_generate_map_escapes_quotes_in_names(tmp_path):
+    output = tmp_path / "map.html"
+
+    generate_map(
+        {'Jane "JD" O\'Doe': ["Côte d'Ivoire"]},
+        output,
+        include_authors=True,
+    )
+
+    html = output.read_text()
+    assert "Ivoire" in html
+    assert "'Côte d'Ivoire'" not in html
 
 
 def test_generate_map_unknown_colorscale_falls_back_to_reds(tmp_path):
