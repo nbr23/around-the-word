@@ -83,6 +83,7 @@ def generate_map(
     show_legend: bool = False,
     top_n: int | None = None,
     include_authors: bool = False,
+    dark_mode: bool = True,
 ) -> Path:
     authors_by_country: dict[str, list[str]] = defaultdict(list)
     for author, countries in author_countries.items():
@@ -125,6 +126,7 @@ def generate_map(
         show_legend=show_legend,
         top_n=top_n or 0,
         authors_by_country=dict(authors_by_country) if include_authors else {},
+        dark_mode=dark_mode,
     )
 
     output_path = Path(output_path)

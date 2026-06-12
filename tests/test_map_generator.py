@@ -111,6 +111,27 @@ def test_generate_map_escapes_quotes_in_names(tmp_path):
     assert "'Côte d'Ivoire'" not in html
 
 
+def test_generate_map_dark_mode_default(tmp_path):
+    output = tmp_path / "map.html"
+
+    generate_map({"Jane Doe": ["France"]}, output)
+
+    html = output.read_text()
+    assert "@media (prefers-color-scheme: dark)" in html
+    assert "const darkModeEnabled = true;" in html
+
+
+def test_generate_map_dark_mode_disabled(tmp_path):
+    output = tmp_path / "map.html"
+
+    generate_map({"Jane Doe": ["France"]}, output, dark_mode=False)
+
+    html = output.read_text()
+    assert "@media (prefers-color-scheme: dark)" not in html
+    assert "color-scheme: light;" in html
+    assert "const darkModeEnabled = false;" in html
+
+
 def test_generate_map_unknown_colorscale_falls_back_to_reds(tmp_path):
     output = tmp_path / "map.html"
 

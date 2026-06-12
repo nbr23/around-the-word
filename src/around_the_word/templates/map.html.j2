@@ -6,7 +6,7 @@
   <title>{{ page_title }}</title>
   <style>
     :root {
-      color-scheme: light dark;
+      color-scheme: {% if dark_mode %}light dark{% else %}light{% endif %};
       --bg: white;
       --text: #333;
       --muted: #888;
@@ -20,6 +20,7 @@
       --country-stroke-hover: #555;
       --tooltip-border: transparent;
     }
+    {% if dark_mode -%}
     @media (prefers-color-scheme: dark) {
       :root {
         --bg: #1d2430;
@@ -36,6 +37,7 @@
         --tooltip-border: rgba(255,255,255,0.18);
       }
     }
+    {%- endif %}
     * {
       margin: 0;
       padding: 0;
@@ -285,11 +287,12 @@
       "interpolateReds", "interpolateBlues", "interpolateGreens", "interpolateOranges",
       "interpolatePurples", "interpolateGreys", "interpolateYlGnBu", "interpolateYlOrBr"
     ]);
+    const darkModeEnabled = {{ dark_mode | tojson }};
     const darkScheme = window.matchMedia('(prefers-color-scheme: dark)');
 
     function getInterpolator() {
       const base = d3[colorScaleName] || d3.interpolateReds;
-      if (darkScheme.matches && lightStartScales.has(colorScaleName)) {
+      if (darkModeEnabled && darkScheme.matches && lightStartScales.has(colorScaleName)) {
         const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#1d2430';
         const low = d3.interpolateRgb(base(0.85), bg)(0.55);
         const high = base(0.4);

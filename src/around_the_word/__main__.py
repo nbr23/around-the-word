@@ -136,6 +136,11 @@ def main():
         action="store_true",
         help="Include all Wikidata citizenships in addition to birth country (default: single)",
     )
+    parser.add_argument(
+        "--no-dark-mode",
+        action="store_true",
+        help="Always render the light theme, ignoring the system color scheme",
+    )
 
     args = parser.parse_args()
 
@@ -207,6 +212,7 @@ def main():
             show_legend=args.legend,
             top_n=args.top,
             include_authors=args.include_authors,
+            dark_mode=not args.no_dark_mode,
         )
         print(f"Map saved to: {output.absolute()}")
     else:

@@ -78,6 +78,7 @@ echo "Stephen King, Albert Camus, Terry Pratchett" | uvx around-the-word --multi
 | `--include-authors` | Include author names in map hover tooltips |
 | `--default-view` | Default toggle view on map load: `authors` or `books` (default: `authors`) |
 | `--multi-nationality` | Include every Wikidata citizenship plus birth country (default: birth country only) |
+| `--no-dark-mode` | Always render the light theme (default: follow the system color scheme) |
 
 When an input file is provided, the map includes a toggle to switch between counting unique authors or total books per country.
 
