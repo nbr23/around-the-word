@@ -20,6 +20,11 @@ Homepage = "https://www.github.com/nbr23/around-the-word"
 Repository = "https://www.github.com/nbr23/around-the-word"
 Issues = "https://github.com/nbr23/around-the-word/issues"
 
+[dependency-groups]
+dev = [
+    "pytest",
+]
+
 [tool.uv]
 package = true
 

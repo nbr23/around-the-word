@@ -5,6 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ page_title }}</title>
   <style>
+    :root {
+      color-scheme: light dark;
+      --bg: white;
+      --text: #333;
+      --muted: #888;
+      --muted-strong: #555;
+      --panel-bg: white;
+      --panel-border: #eee;
+      --panel-shadow: rgba(0,0,0,0.15);
+      --toggle-bg: rgba(0,0,0,0.06);
+      --country-empty: #e0e0e0;
+      --country-stroke: #fff;
+      --country-stroke-hover: #555;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #161616;
+        --text: #d0d0d0;
+        --muted: #8a8a8a;
+        --muted-strong: #c0c0c0;
+        --panel-bg: #242424;
+        --panel-border: #3a3a3a;
+        --panel-shadow: rgba(0,0,0,0.5);
+        --toggle-bg: rgba(255,255,255,0.08);
+        --country-empty: #2e2e2e;
+        --country-stroke: #555;
+        --country-stroke-hover: #ccc;
+      }
+    }
     * {
       margin: 0;
       padding: 0;
@@ -12,7 +41,7 @@
     }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: white;
+      background: var(--bg);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -21,9 +50,9 @@
       text-align: center;
       padding: 1rem;
       font-size: 1.5rem;
-      color: #333;
-      background: white;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      color: var(--text);
+      background: var(--bg);
+      box-shadow: 0 1px 3px var(--panel-shadow);
     }
     #map-container {
       flex: 1;
@@ -36,13 +65,13 @@
       height: 100%;
     }
     .country {
-      stroke: #fff;
+      stroke: var(--country-stroke);
       stroke-width: 0.5;
       cursor: pointer;
       transition: stroke 0.1s, stroke-width 0.1s;
     }
     .country:hover {
-      stroke: #555;
+      stroke: var(--country-stroke-hover);
       stroke-width: 1;
     }
     .tooltip {
@@ -78,10 +107,11 @@
       position: fixed;
       bottom: 20px;
       right: 20px;
-      background: white;
+      background: var(--panel-bg);
+      color: var(--text);
       padding: 12px;
       border-radius: 6px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      box-shadow: 0 2px 8px var(--panel-shadow);
       font-size: 12px;
     }
     .legend-title {
@@ -100,7 +130,7 @@
     }
     .legend-list {
       margin-top: 10px;
-      border-top: 1px solid #eee;
+      border-top: 1px solid var(--panel-border);
       padding-top: 8px;
     }
     .legend-item {
@@ -110,7 +140,7 @@
       padding: 2px 0;
     }
     .legend-item-count {
-      color: #666;
+      color: var(--muted);
     }
     .toggle-container {
       position: fixed;
@@ -120,7 +150,7 @@
     }
     .toggle {
       display: inline-flex;
-      background: rgba(0,0,0,0.06);
+      background: var(--toggle-bg);
       border-radius: 4px;
       padding: 2px;
     }
@@ -132,16 +162,20 @@
       cursor: pointer;
       font-size: 11px;
       font-weight: 500;
-      color: #888;
+      color: var(--muted);
       transition: all 0.15s;
     }
     .toggle-btn.active {
-      background: white;
-      color: #555;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      background: var(--panel-bg);
+      color: var(--muted-strong);
+      box-shadow: 0 1px 2px var(--panel-shadow);
     }
     .toggle-btn:hover:not(.active) {
-      color: #555;
+      color: var(--muted-strong);
+    }
+    .toggle-btn:focus-visible {
+      outline: 2px solid var(--muted-strong);
+      outline-offset: 1px;
     }
     @media (max-width: 600px) {
       h1 { font-size: 1.2rem; padding: 0.75rem; }
@@ -157,8 +191,8 @@
   {% if has_book_data %}
   <div class="toggle-container">
     <div class="toggle">
-      <button class="toggle-btn{% if default_view == 'authors' %} active{% endif %}" data-mode="authors" title="Count unique authors per country">Authors</button>
-      <button class="toggle-btn{% if default_view == 'books' %} active{% endif %}" data-mode="books" title="Count total books per country">Books</button>
+      <button class="toggle-btn{% if default_view == 'authors' %} active{% endif %}" data-mode="authors" aria-pressed="{{ 'true' if default_view == 'authors' else 'false' }}" title="Count unique authors per country">Authors</button>
+      <button class="toggle-btn{% if default_view == 'books' %} active{% endif %}" data-mode="books" aria-pressed="{{ 'true' if default_view == 'books' else 'false' }}" title="Count total books per country">Books</button>
     </div>
   </div>
   {% endif %}
@@ -240,6 +274,10 @@
       return filtered;
     }
 
+    function emptyFill() {
+      return getComputedStyle(document.documentElement).getPropertyValue('--country-empty').trim() || '#e0e0e0';
+    }
+
     function applyFilters() {
       const filtered = getFilteredCounts();
       dataByTopoName = getDataByTopoName(filtered);
@@ -255,7 +293,7 @@
         .attr('fill', d => {
           const name = d.properties.name;
           const count = dataByTopoName[name] || 0;
-          return count > 0 ? color(count) : '#e0e0e0';
+          return count > 0 ? color(count) : emptyFill();
         });
 
       {% if show_legend %}
@@ -304,7 +342,9 @@
     const svg = d3.select('#map-container')
       .append('svg')
       .attr('viewBox', `0 0 ${width} ${height}`)
-      .attr('preserveAspectRatio', 'xMidYMid meet');
+      .attr('preserveAspectRatio', 'xMidYMid meet')
+      .attr('role', 'img')
+      .attr('aria-label', {{ map_title | tojson }} || 'World map of author nationalities');
 
     const projection = d3.geoNaturalEarth1()
       .fitSize([width, height], countries);
@@ -326,7 +366,7 @@
       .attr('fill', d => {
         const name = d.properties.name;
         const count = dataByTopoName[name] || 0;
-        return count > 0 ? color(count) : '#e0e0e0';
+        return count > 0 ? color(count) : emptyFill();
       })
       .on('mouseover', showTooltip)
       .on('mousemove', moveTooltip)
@@ -417,7 +457,9 @@
       currentLabel = mode === "books" ? "book" : "author";
 
       document.querySelectorAll('.toggle-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.mode === mode);
+        const active = btn.dataset.mode === mode;
+        btn.classList.toggle('active', active);
+        btn.setAttribute('aria-pressed', active);
       });
 
       applyFilters();
@@ -496,6 +538,8 @@
         parent.postMessage({ type: 'clear' }, '*');
       }
     });
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyFilters);
 
     window.addEventListener('resize', () => {
       const newWidth = container.clientWidth;
