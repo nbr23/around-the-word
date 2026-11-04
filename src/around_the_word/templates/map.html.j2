@@ -378,8 +378,6 @@
       .domain([1, maxCount])
       .interpolator(getInterpolator());
 
-    let clickTimer = null;
-
     svg.selectAll('.country')
       .data(countries.features)
       .enter()
@@ -397,26 +395,19 @@
       .on('touchstart', showTooltip, { passive: true })
       .on('touchend', hideTooltip, { passive: true })
       .on('click', function(event, d) {
-        if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; }
-        clickTimer = setTimeout(() => {
-          filterCountry = null;
-          filterAuthor = null;
-          filterAuthorList = null;
-          updateURL();
-          applyFilters();
-          parent.postMessage({ type: 'clear' }, '*');
-          clickTimer = null;
-        }, 250);
-      })
-      .on('dblclick', function(event, d) {
-        if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; }
         const topoName = d.properties.name;
         const displayName = topoToDisplayName[topoName] || topoName;
-        filterCountry = displayName;
         filterAuthor = null;
+        filterAuthorList = null;
+        if (filterCountry === displayName) {
+          filterCountry = null;
+          parent.postMessage({ type: 'clear' }, '*');
+        } else {
+          filterCountry = displayName;
+          parent.postMessage({ type: 'filterCountry', country: displayName }, '*');
+        }
         updateURL();
         applyFilters();
-        parent.postMessage({ type: 'filterCountry', country: displayName }, '*');
       });
 
     svg.on('click', function(event) {
